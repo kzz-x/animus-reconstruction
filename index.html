@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Animus Reconstruction｜数字世界重建器</title>
+  </head>
+  <body>
+    <div id="app">
+      <main class="viewport">
+        <div class="topbar"><span class="mark">AR</span><strong>Animus Reconstruction</strong><span class="version">P0 · 场景导入基座</span></div>
+        <div id="stage" role="img" aria-label="三维场景预览"></div>
+        <div class="stage-hint">拖拽旋转 · 滚轮缩放 · Shift + 单击设置重建原点 · 拖入 GLB</div>
+      </main>
+      <aside class="sidebar">
+        <h2>数字世界重建器</h2>
+        <p class="desc">将三维场景从数字虚空逐步重建。当前为供 Codex 继续开发的启动基座。</p>
+        <section>
+          <h3>场景</h3>
+          <label class="upload" for="model-file">选择 GLB 文件</label>
+          <input id="model-file" type="file" accept=".glb,model/gltf-binary" />
+          <button id="demo-btn" type="button">恢复内置测试场景</button>
+          <p id="scene-status" class="status">内置测试场景已加载</p>
+        </section>
+        <section>
+          <h3>重建原点</h3>
+          <p id="origin-label" class="value">X 0.00 / Y 0.00 / Z 0.00</p>
+          <p class="desc">Shift + 单击模型或地面拾取原点；后续 P1 使用世界空间原点驱动波前。</p>
+        </section>
+        <section>
+          <h3>下一开发阶段</h3>
+          <p class="desc">P1 · 世界空间扫描波前、白模与原始材质渐进重建、确定性播放进度。详见 <code>docs/ROADMAP.md</code>。</p>
+        </section>
+      </aside>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
