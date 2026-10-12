@@ -1,0 +1,25 @@
+:root { font-family: Inter, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; color: #e9edf2; background: #0c1016; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input { font: inherit; }
+#app { display: grid; grid-template-columns: minmax(0, 1fr) 326px; height: 100dvh; min-height: 460px; }
+.viewport { position: relative; overflow: hidden; background: #dbe2e9; }
+#stage { position: absolute; inset: 0; }
+#stage canvas { display: block; width: 100%; height: 100%; }
+.topbar { z-index: 1; position: absolute; display: flex; align-items: center; gap: 11px; top: 20px; left: 24px; color: #1f2b3a; letter-spacing: .01em; }
+.mark { font-size: 12px; font-weight: 900; padding: 8px; border: 1px solid #647788; border-radius: 7px; }
+.version { font-size: 11px; padding: 6px 8px; background: #ffffffa1; border-radius: 4px; }
+.stage-hint { position: absolute; z-index: 1; bottom: 22px; left: 24px; padding: 9px 12px; border-radius: 7px; font-size: 12px; color: #25384c; background: #ffffffb5; }
+.sidebar { background: #111820; padding: 26px 24px; overflow-y: auto; border-left: 1px solid #36414a; }
+.sidebar h2 { font-size: 17px; margin: 0 0 8px; }
+.sidebar h3 { font-size: 13px; color: #c9d8e6; margin: 0 0 12px; }
+.desc, .status { font-size: 12px; color: #9dafbb; line-height: 1.7; }
+section { border-top: 1px solid #29333d; padding-top: 20px; margin-top: 22px; }
+.upload, button { display: block; width: 100%; text-align: center; cursor: pointer; border-radius: 6px; padding: 11px; font-size: 13px; }
+.upload { background: #d1e1ef; color: #162b42; font-weight: 650; }
+button { border: 1px solid #435367; background: #1b2531; color: #c9d9e7; margin-top: 8px; }
+button:hover { background: #283548; }
+#model-file { display: none; }
+.value { font-family: ui-monospace, monospace; font-size: 12px; color: #d5e7f5; }
+code { color: #c9d9e7; }
+@media (max-width: 760px) { #app { grid-template-columns: 1fr; grid-template-rows: minmax(350px, 65dvh) 1fr; height: 100dvh; } .sidebar { border-left: none; border-top: 1px solid #36414a; } }
