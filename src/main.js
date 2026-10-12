@@ -1,5 +1,4 @@
-// P0 starter: only scene inspection + GLB import + origin picking.
-// See docs/ROADMAP.md; P1 reconstruction animation is not implemented yet.
+// Optional scene-preview sample: GLB import and origin picking.\n// The developer may replace this code entirely; see docs/PRODUCT.md.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
