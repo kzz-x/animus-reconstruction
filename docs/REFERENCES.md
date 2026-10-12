@@ -1,15 +1,15 @@
-# 技术参考
+# 灵感与可选参考
 
-优先使用官方文档与可验证的基础实现。以下链接用于开发参考，不代表它们已实现本项目完整 Animus 效果。
+**主要视觉锚点：**《刺客信条》Animus / Memory Corridor 中，白色或空白数字空间向真实历史世界逐渐重建的镜头。重点观察**地面向外铺展、几何碎片翻转定位、白模变成真实材质、重建边缘的空间层次**。
 
-- [Three.js GLTFLoader](https://threejs.org/docs/pages/GLTFLoader.html)：完整 GLB/GLTF 导入、标准 PBR 和压缩扩展。
-- [Three.js MeshSurfaceSampler](https://threejs.org/docs/pages/MeshSurfaceSampler.html)：根据表面积采样模型表面，为数字碎片获取目标位置/法线。
-- [Three.js InstancedMesh](https://threejs.org/docs/pages/InstancedMesh.html)：大量方片 / 三角片实例化渲染。
-- [Three.js SkinnedMesh](https://threejs.org/docs/pages/SkinnedMesh.html)：骨骼动画模型在 Shader 中的空间坐标处理参考。
-- [Three.js Animation System](https://threejs.org/manual/pages/animation-system.html)：导入模型自带动画和时间控制。
-- [Three.js EffectComposer](https://threejs.org/docs/pages/EffectComposer.html)：分层后处理与同步扫光视觉。
-- [three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh)：复杂 Mesh 的加速射线与空间查询，按需引入。
+可搜索：`Assassin's Creed Animus memory corridor` · `digital world reconstruction` · `environment materialization` · `radial reconstruction wave` · `voxel flip reveal` · `procedural geometry assembly`。
 
-搜索用语：**Animus memory corridor / world reconstruction / radial wavefront reveal / procedural assembly / materialization / mesh surface instancing / wireframe to PBR / fragment reassembly / digital environment loading**。
+可选技术资料（仅是启发，不限定方案）：
 
-视觉参考：参考 Animus 场景从白色虚空向历史建筑逐步重建的节奏；不直接包含或复制游戏美术资产。
+- [Three.js 官方示例与文档](https://threejs.org/)
+- [Three.js MeshSurfaceSampler](https://threejs.org/docs/pages/MeshSurfaceSampler.html)
+- [Three.js InstancedMesh](https://threejs.org/docs/pages/InstancedMesh.html)
+- [three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh)
+- [three.js dissolve 基础案例](https://github.com/ScreamingRoot/three.js-dissolve-vfx-example)
+
+鼓励自己搜索更多成熟案例、开源实现和优秀参考片，并以最终视觉品质选择方案，而不是照搬上述资料。
