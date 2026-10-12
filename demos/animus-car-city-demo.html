@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ANIMUS — 世界重建 / Car & City Proof of Concept</title>
+<style>
+:root{color-scheme:dark;--ink:#121c29;--blue:#4db9ed;--line:rgba(171,203,223,.16)}*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#07111b;font-family:Inter,"SF Pro Display","Microsoft YaHei",system-ui,sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid #75cff5;outline-offset:3px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 315px;height:100vh;width:100vw}
+.stage{position:relative;overflow:hidden;min-width:0;background:radial-gradient(ellipse at 53% 44%,#fff 0%,#f3f8fc 42%,#d9e6ee 100%)}
+#scene{display:block;width:100%;height:100%;touch-action:none;cursor:grab}#scene.dragging{cursor:grabbing}
+.vignette{pointer-events:none;position:absolute;inset:0;box-shadow:inset 0 0 140px rgba(63,117,154,.09)}
+.top{position:absolute;top:29px;left:34px;right:34px;display:flex;justify-content:space-between;gap:20px;align-items:start;pointer-events:none}
+.brand{display:flex;align-items:center;gap:12px;color:#253f52}.glyph{width:34px;height:34px;display:grid;place-items:center;border:1.5px solid #377ea6;color:#267ba3;border-radius:50%;font-size:19px;font-weight:200}.brand-name{font-size:14px;font-weight:850;letter-spacing:.3em}.brand-tag{font-size:9px;letter-spacing:.2em;color:#7e98aa;margin-top:4px}.live{font-size:10px;letter-spacing:.18em;color:#397ba0;border:1px solid #a8c9dc;background:#f8fbfdad;padding:9px 12px;border-radius:2px;white-space:nowrap}
+.center-pulse{position:absolute;top:49%;left:52%;width:10px;height:10px;transform:translate(-50%,-50%);pointer-events:none;opacity:0}
+.bottom{position:absolute;bottom:31px;left:34px;right:34px;color:#324a5b;pointer-events:none}.footer-top{display:flex;justify-content:space-between;align-items:flex-end;gap:18px}.sequence{font-size:10px;letter-spacing:.24em;color:#6193ac}.story{font-size:25px;font-weight:300;letter-spacing:-.05em;margin-top:5px;line-height:1.1}.story b{font-weight:750}.camera-hint{font-size:11px;color:#6d899a;letter-spacing:.05em;white-space:nowrap}.timeline{display:flex;align-items:center;gap:12px;margin-top:24px;pointer-events:auto}.step{font-size:11px;color:#54758a;min-width:39px;font-variant-numeric:tabular-nums}.bar{height:2px;background:#9ab7c864;flex:1;position:relative}.bar::before{content:'';position:absolute;top:0;left:0;height:100%;background:#288cb5;width:var(--pct,0%)}.bar::after{content:'';position:absolute;top:50%;left:var(--pct,0%);transform:translate(-50%,-50%);width:7px;height:7px;background:#288cb5;border-radius:50%;box-shadow:0 0 0 5px #288cb516}
+.sidebar{display:flex;flex-direction:column;min-height:0;overflow-y:auto;background:linear-gradient(145deg,#0c1724,#101d2a 65%,#101927);border-left:1px solid #304253;color:#f3f7fb;padding:26px 23px 19px;box-shadow:-12px 0 40px #10273822}
+.mini-label{font-size:10px;color:#64b8df;font-weight:750;letter-spacing:.23em}.panel-title{font-size:20px;font-weight:680;letter-spacing:-.04em;margin:9px 0 8px}.panel-intro{font-size:12px;line-height:1.75;color:#8fa1b3;margin:0 0 18px}.tagrow{display:flex;gap:6px;flex-wrap:wrap}.tag{border:1px solid #2a455b;background:#132739;padding:5px 8px;color:#79a7c2;font-size:10px;letter-spacing:.08em;border-radius:3px}
+.group{border-top:1px solid var(--line);padding:18px 0 15px}.group-heading{color:#d4e3ef;font-size:11px;letter-spacing:.13em;margin-bottom:13px;display:flex;justify-content:space-between}.group-index{color:#59758a}.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.preset{background:#172a39;color:#a7bbcb;border:1px solid #2b4253;border-radius:5px;padding:11px 8px;text-align:left;font-size:11px;transition:.15s}.preset small{display:block;color:#607e92;margin-top:5px;font-size:9px}.preset.active{border:1px solid #5eb8e2;color:#e1f6ff;background:#193b53;box-shadow:inset 0 0 0 1px #54aee513}
+.rangebox{margin-top:13px}.range-label{display:flex;justify-content:space-between;font-size:12px;color:#b8cbd8;margin-bottom:8px}.range-value{color:#7acff2;font-variant-numeric:tabular-nums;font-family:monospace}.slider{width:100%;appearance:none;height:3px;cursor:pointer;background:linear-gradient(90deg,#53b5e1 var(--range,50%),#304457 var(--range,50%));border-radius:100px;outline:none;margin:4px 0 10px}.slider::-webkit-slider-thumb{appearance:none;border:2px solid #91ddff;background:#193b53;border-radius:50%;height:13px;width:13px;box-shadow:0 0 0 3px #2ba4d72b}
+.controls{display:flex;gap:7px;margin-top:3px}.primary{flex:1;background:#58bce7;color:#071b29;border:1px solid #77d1f2;border-radius:4px;font-size:12px;font-weight:750;padding:11px 8px}.secondary{background:#162b3e;color:#bdcede;border:1px solid #2c4c63;border-radius:4px;padding:10px 11px;font-size:12px}.primary:hover{background:#85d8f5}.secondary:hover{background:#243e53}.status{display:flex;align-items:center;gap:9px;margin-top:15px;padding:13px 11px;border:1px solid #254155;background:#0d2232;border-radius:4px}.dot{width:7px;height:7px;background:#69dfbe;box-shadow:0 0 13px #69dfbe;border-radius:50%}.status-title{font-size:11px;color:#c7e6f5}.status-detail{font-size:10px;color:#728ba0;margin-top:4px}.tip{color:#778da0;font-size:11px;line-height:1.7;margin-top:11px}.panel-foot{font-size:10px;color:#53738b;letter-spacing:.12em;margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+#toast{position:absolute;top:84px;left:50%;transform:translateX(-50%);background:#103046d9;color:#ddf5ff;border:1px solid #5083a1;padding:10px 15px;font-size:12px;border-radius:3px;opacity:0;transition:opacity .3s;pointer-events:none}
+@media(max-width:820px){.layout{grid-template-columns:1fr;grid-template-rows:minmax(0,65vh) minmax(240px,35vh)}.sidebar{padding:15px 20px}.top{top:17px;left:18px;right:18px}.bottom{bottom:16px;left:18px;right:18px}.brand-name{font-size:12px}.live{display:none}.story{font-size:20px}.camera-hint{display:none}.sidebar .panel-intro{margin:0 0 8px}.tagrow{display:none}.group{padding:12px 0}.panel-foot{display:none}}
+</style>
+</head>
+<body>
+<div class="layout">
+ <div class="stage" id="stage">
+  <canvas id="scene"></canvas><div class="vignette"></div>
+  <div class="top"><div class="brand"><div class="glyph">A</div><div><div class="brand-name">ANIMUS</div><div class="brand-tag">ENVIRONMENT RECONSTRUCTION / 01</div></div></div><span class="live">●　LIVE 3D · WEBGL2</span></div>
+  <div class="bottom"><div class="footer-top"><div><div class="sequence" id="stateCaption">MEMORY SEQUENCE　/　INITIALIZING</div><div class="story" id="story">记忆正在<b>重建</b></div></div><div class="camera-hint">鼠标拖拽 · 旋转视角　/　滚轮 · 缩放</div></div><div class="timeline"><span class="step">00:00</span><div class="bar" id="bottomBar"></div><span class="step">00:08</span></div></div>
+  <div id="toast"></div>
+ </div>
+ <aside class="sidebar">
+  <div class="mini-label">PROOF OF CONCEPT　/　V0.1</div>
+  <h1 class="panel-title">世界重建 · 实时演示</h1>
+  <p class="panel-intro">一辆汽车作为数字记忆原点。重建波从街道中心扩散，将周围建筑从线框、翻转碎片逐步装配为真实世界。</p>
+  <div class="tagrow"><span class="tag">汽车 + 街区</span><span class="tag">三维空间波前</span><span class="tag">实时可交互</span></div>
+  <div class="group"><div class="group-heading"><span>视觉预设</span><span class="group-index">01 / STYLE</span></div>
+   <div class="preset-grid"><button class="preset active" data-preset="0">ANIMUS 原典<small>数字扫描 · 真实场景</small></button><button class="preset" data-preset="1">蓝图重建<small>线框加强 · 工程风格</small></button><button class="preset" data-preset="2">像素拼合<small>碎片加强 · 方片翻转</small></button><button class="preset" data-preset="3">快速扫描<small>短促波前 · 材质揭示</small></button></div>
+  </div>
+  <div class="group"><div class="group-heading"><span>动画控制</span><span class="group-index">02 / ANIMATION</span></div>
+   <div class="rangebox"><div class="range-label"><span>重建进度</span><span class="range-value" id="progressNum">0%</span></div><input aria-label="重建进度" class="slider" id="progress" type="range" min="0" max="1000" value="0"></div>
+   <div class="controls"><button class="primary" id="play">▶　播放重建</button><button class="secondary" id="reset">↺ 重置</button></div>
+   <div class="rangebox"><div class="range-label"><span>扫描波宽度</span><span class="range-value" id="widthNum">0.105</span></div><input aria-label="扫描波宽度" class="slider" id="waveWidth" type="range" min="35" max="230" value="105"></div>
+   <div class="rangebox"><div class="range-label"><span>建筑向上生成</span><span class="range-value" id="heightNum">38%</span></div><input aria-label="建筑向上生成" class="slider" id="heightDelay" type="range" min="0" max="100" value="38"></div>
+   <div class="rangebox"><div class="range-label"><span>碎片密度</span><span class="range-value" id="densityNum">75%</span></div><input aria-label="碎片密度" class="slider" id="tileDensity" type="range" min="0" max="100" value="75"></div>
+  </div>
+  <div class="group"><div class="group-heading"><span>视图操作</span><span class="group-index">03 / CAMERA</span></div><div class="controls"><button id="cam1" class="secondary" style="flex:1">◇ 斜俯视</button><button id="cam2" class="secondary" style="flex:1">◎ 街道视角</button></div>
+   <div class="status"><div class="dot"></div><div><div class="status-title">程序化三维场景 · 无需下载模型</div><div class="status-detail" id="renderStatus">正在初始化 GPU ...</div></div></div>
+   <p class="tip">这是一份独立 HTML 技术样片，重点验证空间波前、模型逐区域显现和可控数字碎片。可随时拖动进度、转动摄影机查看是否真实发生在三维空间中。</p>
+  </div><div class="panel-foot">LOCAL DEMO · NOT COMMITTED TO GITHUB</div>
+ </aside>
+</div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('scene'), stage=document.getElementById('stage');
+const gl=canvas.getContext('webgl2',{alpha:true,antialias:true,premultipliedAlpha:false,preserveDrawingBuffer:true});
+if(!gl){document.getElementById('renderStatus').textContent='此浏览器不支持 WebGL2';return;}
+let progress=0, playing=true, lastTime=performance.now(), elapsed=0, preset=0, waveWidth=.105, heightDelay=.38, density=.75;
+const DURATION=8, MAX_RANGE=33, origin=[0,0.4,0];
+let yaw=.78,pitch=.43,zoom=30, target=[0,2.8,0];
+const rand=(function(){let s=190521;return ()=>{s=(Math.imul(1664525,s)+1013904223)|0;return(s>>>0)/4294967296;};})();
+const VERT=`#version 300 es
+precision highp float;
+layout(location=0) in vec3 aPos;layout(location=1) in vec3 aNormal;layout(location=2) in vec3 aColor;layout(location=3) in float aTag;
+uniform mat4 uVP;out vec3 vPos;out vec3 vNormal;out vec3 vColor;out float vTag;
+void main(){vPos=aPos;vNormal=aNormal;vColor=aColor;vTag=aTag;gl_Position=uVP*vec4(aPos,1.);}`;
+const FRAG=`#version 300 es
+precision highp float;
+in vec3 vPos,vNormal,vColor;in float vTag;
+uniform vec3 uCam;uniform float uP,uWidth,uHeight,uMaxRange,uTime;uniform int uMode;
+out vec4 frag;
+float hash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
+void main(){
+ vec3 n=normalize(vNormal); vec3 sun=normalize(vec3(-.47,.88,.36)); float dif=max(dot(n,sun),0.);
+ vec3 col=vColor*(.79+.30*dif);
+ float spec=pow(max(dot(reflect(-sun,n),normalize(uCam-vPos)),0.),26.)*.13;
+ col+=vec3(spec);
+ float dist=length(vPos.xz-vec2(0.));
+ if(vTag>.5 && vTag<1.5 && uP<.999){
+  float arrival=(dist+max(0.,vPos.y-.6)*uHeight*1.05)/uMaxRange;
+  float noise=hash(floor(vPos*2.2));
+  float delta=uP-arrival+(noise-.5)*.037;
+  float phase=delta/max(uWidth,.005);
+  if(phase<-.17) discard;
+  float release=smoothstep(-.16,.25,phase);
+  if(hash(floor(vPos*5.5)+vec3(9.1)) > release)discard;
+  vec2 uv=abs(n.y)>.63?vPos.xz:(abs(n.x)>.63?vPos.zy:vPos.xy);
+  vec2 g=abs(fract(uv*1.25)-.5);float lines=smoothstep(.465,.495,max(g.x,g.y));
+  float fine=max(smoothstep(.465,.495,abs(fract(uv*4.0)-.5).x),smoothstep(.465,.495,abs(fract(uv*4.0)-.5).y));
+  float scan=exp(-abs(phase-.32)*7.);
+  float tile=step(.56,hash(floor(vPos*3.1)+vec3(.13)));
+  vec3 ghost=vec3(.84,.91,.95) - .13*tile + vec3(.02,.085,.11)*fine;
+  ghost=mix(ghost,vec3(.08,.46,.65),clamp(lines*.64+scan*.42,0.,.94));
+  float solid=smoothstep(.27,1.13,phase);
+  if(uMode==1)solid*=.28;
+  if(uMode==3)solid=smoothstep(.12,.59,phase);
+  col=mix(ghost,col,solid);
+  col+=vec3(.12,.41,.54)*scan*(1.-solid)*.8;
+  if(uMode==1)col=mix(col,vec3(.12,.6,.85),lines*.45*(1.-solid));
+ }else if(vTag>2.5){
+  vec2 uv=vPos.xz;vec2 v=abs(fract(uv)-.5);
+  float grid=smoothstep(.485,.495,max(v.x,v.y))*.035;
+  col=vec3(.93,.958,.976)-grid;
+ }
+ float haze=smoothstep(18.,55.,length(uCam-vPos));
+ col=mix(col,vec3(.93,.963,.982),haze*.25);
+ col=pow(max(col,vec3(0.)),vec3(.94));
+ frag=vec4(col,1.);
+}`;
+const TILE_VERT=`#version 300 es
+precision highp float;
+layout(location=0) in vec2 aCorner;
+layout(location=1) in vec3 aCenter;layout(location=2) in vec3 aNormal;layout(location=3) in vec4 aRandom;layout(location=4) in vec3 aColor;
+uniform mat4 uVP;uniform float uP,uWidth,uHeight,uMaxRange,uDensity;uniform int uMode;
+out float vAlpha;out vec3 vColor;out vec2 vUV;
+void main(){
+ float arrival=(length(aCenter.xz)+max(0.,aCenter.y-.6)*uHeight*1.05)/uMaxRange;
+ float phase=(uP-arrival+(aRandom.x-.5)*.053)/max(uWidth,.005);
+ float existence=smoothstep(-.63,-.15,phase)*(1.-smoothstep(.65,1.17,phase));
+ if(uMode==3)existence*=.38; if(uMode==2)existence*=1.25;
+ existence*=step(aRandom.z,uDensity)*(1.-smoothstep(.985,.999,uP));
+ vec3 n=normalize(aNormal);vec3 helper=abs(n.y)>.9?vec3(1.,0.,0.):vec3(0.,1.,0.);
+ vec3 t=normalize(cross(helper,n));vec3 b=cross(n,t);
+ float appear=1.-smoothstep(-.48,.58,phase);
+ float angle=appear*(6.28*(aRandom.y-.5)+3.14);
+ float size=mix(.17,.38,aRandom.w)*(uMode==2?1.28:1.);
+ vec3 local=t*(aCorner.x*size)+b*(aCorner.y*size*cos(angle))+n*(aCorner.y*size*sin(angle));
+ vec3 drift=vec3((aRandom.x-.5)*2.9,aRandom.y*3.0+.4,(aRandom.z-.5)*2.9)*appear;
+ vec3 pos=aCenter+drift+local+n*.05;
+ gl_Position=uVP*vec4(pos,1.);
+ vAlpha=clamp(existence,0.,1.)*.9;vColor=mix(vec3(.20,.62,.79),mix(vec3(.8,.89,.94),aColor,.21),smoothstep(.2,1.,phase));vUV=aCorner;
+}`;
+const TILE_FRAG=`#version 300 es
+precision highp float;
+in float vAlpha;in vec3 vColor;in vec2 vUV;out vec4 frag;
+void main(){if(vAlpha<.015)discard;float edge=1.-smoothstep(.42,.5,max(abs(vUV.x),abs(vUV.y)));frag=vec4(vColor+(1.-edge)*.15,vAlpha*edge);}`;
+const RING_VERT=`#version 300 es
+precision highp float;layout(location=0) in vec3 aPos;uniform mat4 uVP;out vec3 vPos;void main(){vPos=aPos;gl_Position=uVP*vec4(aPos,1.);}`;
+const RING_FRAG=`#version 300 es
+precision highp float;in vec3 vPos;uniform float uP,uMaxRange,uTime;out vec4 frag;
+void main(){float d=length(vPos.xz);float r=uP*uMaxRange;float wave=exp(-pow((d-r)/.28,2.))* .55+exp(-pow((d-r)/1.25,2.))*.13;float m=smoothstep(.015,.10,uP)*(1.-smoothstep(.93,1.,uP));float lines=.25+.75*(1.-smoothstep(.8,1.,abs(sin(d*6.))));frag=vec4(.04,.53,.81,wave*m*lines);}`;
+function makeShader(type,source){const sh=gl.createShader(type);gl.shaderSource(sh,source);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh;}
+function program(v,f){const p=gl.createProgram();gl.attachShader(p,makeShader(gl.VERTEX_SHADER,v));gl.attachShader(p,makeShader(gl.FRAGMENT_SHADER,f));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));return p;}
+let mainProg,tileProg,ringProg;
+try{mainProg=program(VERT,FRAG);tileProg=program(TILE_VERT,TILE_FRAG);ringProg=program(RING_VERT,RING_FRAG)}catch(e){document.getElementById('renderStatus').textContent='Shader error '+e.message;console.error(e);return;}
+const verts=[],samples=[];let triangleCount=0;
+const rgb=h=>[parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255];
+const C={asphalt:rgb('#52616d'),sidewalk:rgb('#c7ced2'),lime:rgb('#cbd6c7'),concrete:rgb('#bcc7ce'),chalk:rgb('#e9edf0'),white:rgb('#e0e5ea'),sand:rgb('#b5b7b3'),dark:rgb('#445564'),glass:rgb('#4a788d'),deepglass:rgb('#314f62'),steel:rgb('#82929b'),copper:rgb('#c39865'),rail:rgb('#eff5f6'),car:rgb('#245a78'),carDark:rgb('#14354d'),tire:rgb('#1c2830'),hub:rgb('#899ea9'),red:rgb('#db705f'),lamp:rgb('#cfeaf3'),green:rgb('#6e9f8d'),trunk:rgb('#7a8b83')};
+function cross(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]};
+function sub(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]]};
+function norm(v){const l=Math.hypot(...v)||1;return v.map(x=>x/l)};
+function tri(a,b,c,color,tag=1,tiles=false,nOverride=null){const n=nOverride||norm(cross(sub(b,a),sub(c,a)));for(const pos of [a,b,c])verts.push(...pos,...n,...color,tag);triangleCount++;
+ if(tiles){const A=.5*Math.hypot(...cross(sub(b,a),sub(c,a)));if(A>.005)samples.push({a,b,c,n,color,area:A});}}
+function quad(a,b,c,d,color,tag=1,tiles=false){tri(a,c,b,color,tag,tiles);tri(a,d,c,color,tag,tiles)}
+function box(x,y,z,w,h,d,col,tag=1,tile=false){const x0=x-w/2,x1=x+w/2,y0=y-h/2,y1=y+h/2,z0=z-d/2,z1=z+d/2;const P=(a,b,c)=>[a,b,c];
+ quad(P(x1,y0,z1),P(x0,y0,z1),P(x0,y1,z1),P(x1,y1,z1),col,tag,tile);//front
+ quad(P(x0,y0,z0),P(x1,y0,z0),P(x1,y1,z0),P(x0,y1,z0),col,tag,tile);//back
+ quad(P(x0,y0,z1),P(x0,y0,z0),P(x0,y1,z0),P(x0,y1,z1),col,tag,tile);
+ quad(P(x1,y0,z0),P(x1,y0,z1),P(x1,y1,z1),P(x1,y1,z0),col,tag,tile);
+ quad(P(x0,y1,z1),P(x0,y1,z0),P(x1,y1,z0),P(x1,y1,z1),col,tag,tile);
+ quad(P(x0,y0,z0),P(x0,y0,z1),P(x1,y0,z1),P(x1,y0,z0),col,tag,tile);
+}
+function cylinder(x,y,z,rad,depth,color,tag=0,axis='z',segments=16){const to=(r,c,a)=>axis==='z'?[x+r*Math.cos(a),y+r*Math.sin(a),z+c]:[x+r*Math.cos(a),y+c,z+r*Math.sin(a)];for(let i=0;i<segments;i++){const a=i/segments*6.283,b=(i+1)/segments*6.283;
+ quad(to(rad,-depth/2,a),to(rad,-depth/2,b),to(rad,depth/2,b),to(rad,depth/2,a),color,tag,false);
+ tri(to(0,depth/2,a),to(rad,depth/2,a),to(rad,depth/2,b),color,tag);
+ tri(to(0,-depth/2,a),to(rad,-depth/2,b),to(rad,-depth/2,a),color,tag);
+}}
+function polyZ(points,z,col,tag=0){for(let i=1;i<points.length-1;i++)tri([points[0][0],points[0][1],z],[points[i][0],points[i][1],z],[points[i+1][0],points[i+1][1],z],col,tag);}
+function tree(x,z,scale=1){box(x,.55*scale,z,.19*scale,1.15*scale,.19*scale,C.trunk,1);for(const [yy,r] of [[1.35,.73],[1.86,.57]]){const parts=9;for(let i=0;i<parts;i++){const a=2*Math.PI*i/parts,b=2*Math.PI*(i+1)/parts;tri([x,yy*scale+.55*scale,z],[x+r*scale*Math.cos(a),(yy-.4)*scale,z+r*scale*Math.sin(a)],[x+r*scale*Math.cos(b),(yy-.4)*scale,z+r*scale*Math.sin(b)],C.green,1,true);}}}
+function building(x,z,w,h,d,color,style=0){box(x,h/2,z,w,h,d,color,1,true);box(x,h+.16,z,w+.45,.32,d+.45,C.chalk,1,true);box(x,h+.39,z,w+.15,.18,d+.15,C.steel,1,true);
+ const stories=Math.max(2,Math.floor(h/2.2)),cols=Math.max(2,Math.floor(w/1.35)),winW=Math.min(.74,w/cols*.57);
+ for(let story=0;story<stories;story++){const yy=1.65+story*(h-2.6)/Math.max(1,stories-1);for(let i=0;i<cols;i++){const xx=x-w/2+(i+.5)*w/cols;if(yy+.55<h-.35){
+ box(xx,yy,z+d/2+.014,winW,.92,.048,style===1?C.deepglass:C.glass,1,false);box(xx,yy+.49,z+d/2+.048,winW+.08,.065,.06,C.white,1,false);
+ }}}for(let side of [-1,1]){const n=Math.max(2,Math.floor(d/1.9));for(let story=0;story<stories;story++){const yy=1.65+story*(h-2.6)/Math.max(1,stories-1);for(let i=0;i<n;i++){const zz=z-d/2+(i+.5)*d/n;if(yy+.5<h-.35)box(x+side*(w/2+.018),yy,zz,.045,.8,.62,C.deepglass,1,false);}}}
+ // Ground storefront / entrance and rooftop elements.
+ if(style%2===0){box(x,h*.0+.95,z+d/2+.17,Math.min(1.3,w*.28),1.9,.15,C.dark,1,false);box(x,.95,z+d/2+.27,.06,1.65,.17,C.steel,1,false);}
+ if(style===1||style===3){box(x+w*.23,h+.85,z-d*.18,.14,1.05,.14,C.steel,1);box(x+w*.23,h+1.35,z-d*.18,.68,.08,.68,C.copper,1);}
+}
+// The permanent abstract simulation floor.
+box(0,-.40,0,110,.08,110,rgb('#eff5f9'),3,false);
+// Pavements and procedural central street.
+box(0,-.14,0,47,.24,9.7,C.asphalt,1,true);
+box(0,-.05,-7.2,47,.28,4.65,C.sidewalk,1,true);
+box(0,-.05,7.2,47,.28,4.65,C.sidewalk,1,true);
+box(0,-.1,-10.5,47,.16,2.0,C.lime,1,false);
+box(0,-.1,10.5,47,.16,2.0,C.lime,1,false);
+// Dashed street center line and crossing bars.
+for(let x=-21;x<22;x+=3.1){box(x,.005,0,1.5,.02,.09,C.chalk,1,false)}
+for(let z=-3.4;z<3.6;z+=.78){box(-8.5,.016,z,.55,.025,.43,C.chalk,1,false)}
+// City-block composition: leave central car clearly visible.
+building(-16,-12,7.6,9.8,5.8,C.sand,0);
+building(-7.1,-12.5,6.1,13,6.1,C.concrete,1);
+building(2,-13.2,6.7,10,5.5,C.chalk,2);
+building(11.7,-12.7,8,15,6.8,C.sand,3);
+building(19.9,-12.5,5.1,7.2,5.5,C.concrete,0);
+building(-17.2,12.8,6.6,7.9,5.6,C.chalk,2);
+building(-23.0,12.5,5.6,8.6,5.1,C.sand,0);
+building(23.4,12.3,6.4,10.2,5.9,C.concrete,1);
+building(20.1,12.4,5.6,7.6,5.2,C.chalk,2);
+for(const [x,z,s] of [[-20,7,1.1],[-4.8,8.8,.9],[4.8,8.5,1.1],[20,7,.8],[-18,-7,1.0],[19,-7,.95]])tree(x,z,s);
+// Street lamps.
+for(const [x,z] of [[-5.3,-5.1],[7,-5.2],[-5.5,5.0],[7,5]]){box(x,1.85,z,.11,3.65,.11,C.steel,1);box(x+.36,3.62,z,.78,.09,.09,C.steel,1);box(x+.7,3.49,z,.32,.12,.25,C.lamp,1);}
+// Hero car (permanent reconstruction center): body, sculpted cabin, glass, wheels.
+box(0,.66,0,4.95,.61,2.06,C.car,0);
+box(.1,.41,0,4.65,.17,1.94,C.carDark,0);
+box(1.52,.91,0,1.63,.22,1.93,C.car,0);
+box(-1.76,.9,0,1.15,.22,1.89,C.car,0);
+box(0,1.15,0,3.2,.19,1.85,C.carDark,0);
+// Roof prism / glass cabin silhouette.
+for(const z of [-.87,.87]){
+ const pts=[[-1.55,1.06],[-.92,1.91],[.94,1.91],[1.52,1.06]];
+ polyZ(pts,z,C.car,0);
+ polyZ([[-1.33,1.20],[-.82,1.78],[-.05,1.78],[-.05,1.20]],z+(z>0?.032:-.032),C.deepglass,0);
+ polyZ([[.07,1.20],[.07,1.78],[.81,1.78],[1.32,1.20]],z+(z>0?.033:-.033),C.deepglass,0);
+ box(.01,1.48,z+(z>0?.06:-.06),.07,.56,.06,C.steel,0);
+}
+// Sloped windshield / rear window and cabin roof.
+quad([1.52,1.07,-.85],[1.52,1.07,.85],[.95,1.9,.85],[.95,1.9,-.85],C.deepglass,0);
+quad([-.93,1.9,-.85],[-.93,1.9,.85],[-1.52,1.07,.85],[-1.52,1.07,-.85],C.deepglass,0);
+box(0,1.93,0,1.92,.15,1.72,C.car,0);
+for(const x of [-1.6,1.6])for(const z of [-1.06,1.06]){cylinder(x,.51,z,.52,.2,C.tire,0,'z',18);cylinder(x,.51,z+(z>0?.13:-.13),.33,.04,C.hub,0,'z',18);cylinder(x,.51,z+(z>0?.17:-.17),.13,.045,C.steel,0,'z',14);}
+for(const z of [-.75,.75]){box(2.51,.86,z,.08,.22,.48,C.lamp,0);box(-2.51,.86,z,.08,.2,.44,C.red,0);}
+for(const z of [-.89,.89])box(.60,.99,z,.47,.06,.09,C.steel,0);
+box(2.55,.45,0,.08,.13,1.85,C.carDark,0);box(-2.53,.46,0,.08,.13,1.85,C.carDark,0);
+// Fine near-ground shadow as planar dark patch under car, visible with car.
+box(0,-.018,0,5.15,.008,2.22,rgb('#455768'),0,false);
+// Upload main geometry.
+function staticVao(){const vao=gl.createVertexArray();gl.bindVertexArray(vao);const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);const stride=10*4;for(const [loc,n,off] of [[0,3,0],[1,3,3],[2,3,6],[3,1,9]]){gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,n,gl.FLOAT,false,stride,off*4);}gl.bindVertexArray(null);return vao;}
+// NOTE: all triangles use 10 floats (3+3+3+1).
+function meshVao(){const vao=gl.createVertexArray();gl.bindVertexArray(vao);const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);const stride=10*4;for(const [loc,n,off] of [[0,3,0],[1,3,3],[2,3,6],[3,1,9]]){gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,n,gl.FLOAT,false,stride,off*4);}gl.bindVertexArray(null);return vao;}
+const sceneVao=meshVao(),vertexCount=verts.length/10;
+// Weighted face sampling makes small pixel fragments actually follow 3D surfaces.
+const tileData=[];let totalArea=0;const cdf=[];for(const s of samples){totalArea+=s.area;cdf.push(totalArea)};
+function sampleFace(){const u=rand()*totalArea;let lo=0,hi=cdf.length-1;while(lo<hi){const mid=(lo+hi)>>1;if(cdf[mid]<u)lo=mid+1;else hi=mid;}return samples[lo]}
+for(let i=0;i<6400;i++){const s=sampleFace();let a=rand(),b=rand();if(a+b>1){a=1-a;b=1-b;}const p=s.a.map((v,k)=>v+a*(s.b[k]-v)+b*(s.c[k]-v));tileData.push(...p,...s.n,rand(),rand(),rand(),rand(),...s.color);}
+function tileVao(){const vao=gl.createVertexArray();gl.bindVertexArray(vao);
+ const shape=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,shape);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-.5,-.5,.5,-.5,.5,.5,-.5,-.5,.5,.5,-.5,.5]),gl.STATIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+ const inst=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,inst);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(tileData),gl.STATIC_DRAW);const stride=13*4;for(const [loc,n,off] of [[1,3,0],[2,3,3],[3,4,6],[4,3,10]]){gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,n,gl.FLOAT,false,stride,off*4);gl.vertexAttribDivisor(loc,1);}gl.bindVertexArray(null);return vao;}
+const tileVAO=tileVao();
+const ringVerts=[];const r=48,ringY=.135;for(const A of [[-r,ringY,-r],[r,ringY,-r],[r,ringY,r],[-r,ringY,-r],[r,ringY,r],[-r,ringY,r]])ringVerts.push(...A);
+const ringVAO=gl.createVertexArray();gl.bindVertexArray(ringVAO);gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(ringVerts),gl.STATIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);gl.bindVertexArray(null);
+// Camera matrices, column-major.
+function perspective(fovy,aspect,near,far){const f=1/Math.tan(fovy/2),nf=1/(near-far);return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0]);}
+function lookAt(eye,center){const z=norm(sub(eye,center)),x=norm(cross([0,1,0],z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-(x[0]*eye[0]+x[1]*eye[1]+x[2]*eye[2]),-(y[0]*eye[0]+y[1]*eye[1]+y[2]*eye[2]),-(z[0]*eye[0]+z[1]*eye[1]+z[2]*eye[2]),1]);}
+function multiply(A,B){const O=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){let v=0;for(let k=0;k<4;k++)v+=A[k*4+r]*B[c*4+k];O[c*4+r]=v;}return O;}
+function uniform(p,name){return gl.getUniformLocation(p,name)}
+function updateUniforms(p,vp,eye){gl.useProgram(p);gl.uniformMatrix4fv(uniform(p,'uVP'),false,vp);gl.uniform1f(uniform(p,'uP'),progress);gl.uniform1f(uniform(p,'uMaxRange'),MAX_RANGE);gl.uniform1f(uniform(p,'uTime'),elapsed);if(p!==ringProg){gl.uniform1f(uniform(p,'uWidth'),waveWidth);gl.uniform1f(uniform(p,'uHeight'),heightDelay);gl.uniform1i(uniform(p,'uMode'),preset);if(p===mainProg)gl.uniform3fv(uniform(p,'uCam'),eye);else gl.uniform1f(uniform(p,'uDensity'),density)}}
+function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);const w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}gl.viewport(0,0,w,h)}
+const slider=document.getElementById('progress'),playButton=document.getElementById('play');
+function setP(v){progress=Math.max(0,Math.min(1,v));slider.value=Math.round(progress*1000);slider.style.setProperty('--range',(progress*100).toFixed(1)+'%');document.getElementById('progressNum').textContent=Math.round(progress*100)+'%';document.getElementById('bottomBar').style.setProperty('--pct',(progress*100)+'%');const title=document.getElementById('stateCaption');title.textContent=progress<.03?'MEMORY SEQUENCE / WHITE VOID':progress<.34?'MEMORY SEQUENCE / INITIAL GEOMETRY':progress<.72?'MEMORY SEQUENCE / REASSEMBLY':'MEMORY SEQUENCE / MATERIAL SYNC';document.getElementById('story').innerHTML=progress>.985?'世界<b>同步完成</b>':progress<.04?'记忆正在<b>初始化</b>':'记忆正在<b>重建</b>';}
+function togglePlay(force){playing=force===undefined?!playing:force;if(playing&&progress>=.995)setP(0);playButton.textContent=playing?'Ⅱ　暂停动画':'▶　播放重建';}
+slider.addEventListener('input',()=>{togglePlay(false);setP(+slider.value/1000)});playButton.addEventListener('click',()=>togglePlay());document.getElementById('reset').addEventListener('click',()=>{setP(0);togglePlay(false)});
+for(const id of ['waveWidth','heightDelay','tileDensity']){document.getElementById(id).addEventListener('input',e=>{const n=+e.target.value;if(id==='waveWidth'){waveWidth=n/1000;document.getElementById('widthNum').textContent=waveWidth.toFixed(3)}if(id==='heightDelay'){heightDelay=n/100;document.getElementById('heightNum').textContent=n+'%'}if(id==='tileDensity'){density=n/100;document.getElementById('densityNum').textContent=n+'%'}e.target.style.setProperty('--range',((n-(+e.target.min))/(+e.target.max-(+e.target.min))*100)+'%')})}
+for(const b of document.querySelectorAll('.preset'))b.addEventListener('click',()=>{preset=+b.dataset.preset;document.querySelectorAll('.preset').forEach(el=>el.classList.toggle('active',el===b));const num=[105,140,145,55][preset];waveWidth=num/1000;const w=document.getElementById('waveWidth');w.value=num;w.dispatchEvent(new Event('input'));togglePlay(false);setP(.47);});
+document.getElementById('cam1').addEventListener('click',()=>{yaw=.78;pitch=.43;zoom=30;target=[0,2.8,0]});document.getElementById('cam2').addEventListener('click',()=>{yaw=.94;pitch=.22;zoom=25;target=[0,2.6,0]});
+let pointerDown=null;canvas.addEventListener('pointerdown',e=>{pointerDown={x:e.clientX,y:e.clientY,yaw,pitch};canvas.setPointerCapture(e.pointerId);canvas.classList.add('dragging')});canvas.addEventListener('pointermove',e=>{if(!pointerDown)return;const dx=(e.clientX-pointerDown.x)/Math.max(1,canvas.clientWidth);const dy=(e.clientY-pointerDown.y)/Math.max(1,canvas.clientHeight);yaw=pointerDown.yaw-dx*4.4;pitch=Math.max(.08,Math.min(1.35,pointerDown.pitch+dy*2.7))});canvas.addEventListener('pointerup',()=>{pointerDown=null;canvas.classList.remove('dragging')});canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging')});canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(11,Math.min(76,zoom*Math.exp(e.deltaY*.001)))},{passive:false});
+function render(t){const dt=Math.min((t-lastTime)/1000,.07);lastTime=t;elapsed+=dt;if(playing){setP(progress+dt/DURATION);if(progress>=.9999)togglePlay(false);}resize();
+ const eye=[target[0]+zoom*Math.sin(yaw)*Math.cos(pitch),target[1]+zoom*Math.sin(pitch),target[2]+zoom*Math.cos(yaw)*Math.cos(pitch)];const vp=multiply(perspective(Math.PI/3.05,canvas.width/Math.max(1,canvas.height),.1,200),lookAt(eye,target));
+ gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ updateUniforms(mainProg,vp,eye);gl.bindVertexArray(sceneVao);gl.drawArrays(gl.TRIANGLES,0,vertexCount);
+ gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+ updateUniforms(ringProg,vp,eye);gl.bindVertexArray(ringVAO);gl.drawArrays(gl.TRIANGLES,0,6);
+ updateUniforms(tileProg,vp,eye);gl.bindVertexArray(tileVAO);gl.drawArraysInstanced(gl.TRIANGLES,0,6,6400);
+ gl.depthMask(true);gl.disable(gl.BLEND);gl.bindVertexArray(null);
+ requestAnimationFrame(render);
+}
+document.getElementById('renderStatus').textContent=`场景 ${triangleCount.toLocaleString()} 个三角面 · 6,400 碎片样本`;
+setP(0);for(const s of document.querySelectorAll('.slider'))s.dispatchEvent(new Event('input'));togglePlay(false);
+requestAnimationFrame(render);
+window.demo={setProgress:setP,play:()=>togglePlay(true),pause:()=>togglePlay(false),preset:i=>document.querySelectorAll('.preset')[i]?.click(),camera:(a,b,c)=>{yaw=a;pitch=b;zoom=c},stats:{triangles:triangleCount,vertices:vertexCount,tiles:6400}};
+setTimeout(()=>togglePlay(true),600);
+})();
+</script>
+</body>
+</html>
