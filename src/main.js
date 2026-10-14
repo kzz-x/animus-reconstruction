@@ -1,171 +1,169 @@
-// Optional scene-preview sample: GLB import and origin picking.
-// The developer may replace this code entirely; see docs/PRODUCT.md.
-import * as THREE from 'three';
+import * as T from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import './style.css';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { defaults,presets } from './presets.js';
+import { ReconstructionEngine,ease } from './engine.js';
+import { carScene,districtScene,courtyardScene,createLoader,configureLoaders } from './scenes.js';
+import { zip,download } from './archive.js';
+import './studio.css';
 
-const stage = document.getElementById('stage');
-const fileInput = document.getElementById('model-file');
-const status = document.getElementById('scene-status');
-const originLabel = document.getElementById('origin-label');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-stage.appendChild(renderer.domElement);
+const $=id=>document.getElementById(id),escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+document.querySelector('[data-scene="district"]').insertAdjacentHTML('afterend',`<button class="scene-card" data-scene="courtyard"><div class="scene-art city-art"><svg viewBox="0 0 200 70"><path d="M20 61h160v4H20zM26 26L100 5l74 21zM30 27h140v5H30z"/><path d="M40 34v26M64 34v26M88 34v26M112 34v26M136 34v26M160 34v26" stroke-width="7"/></svg></div><span><b>古典庭院</b><small>COLONNADE / SCULPTURE</small></span><i>03</i></button>`);
+document.querySelector('.section-label span').textContent='03';
+$('timecode').insertAdjacentHTML('afterend','<input id="current-time" aria-label="当前时间" type="number" min="0" max="60" step="0.033333" title="当前时间 / 秒">');
+const state=structuredClone(defaults),runtime=structuredClone(state),stage=$('stage');let panel='presets',playing=false,comparing=false,busy=false,exporting=false,cancelExport=false,focusPick=false,mixer=null,current=null,lastEnv='';
+let userPresets=[];try{userPresets=JSON.parse(localStorage.getItem('animus-presets')||'[]');}catch{}
+let customHDRSource=null;
+const undoStack=[],redoStack=[],selection=new Set();
+function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('show'),3600);}
+window.addEventListener('error',e=>{console.error(e.error);toast('运行错误：'+e.message);});
+const renderer=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.VSMShadowMap;stage.append(renderer.domElement);
+configureLoaders(renderer);
+const shaderErrors=[];renderer.debug.onShaderError=(gl,program,vs,fs)=>{const message=[gl.getProgramInfoLog(program),gl.getShaderInfoLog(vs),gl.getShaderInfoLog(fs)].filter(Boolean).join('\n');shaderErrors.push(message);console.error('Animus shader compilation: '+message);};
+const scene=new T.Scene(),camera=new T.PerspectiveCamera(state.fov,1,.025,500);camera.position.set(5.4,2.8,6.7);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.08;controls.target.set(0,.65,0);controls.maxPolarAngle=Math.PI*.49;
+RectAreaLightUniformsLib.init();const key=new T.DirectionalLight(0xffffff,4);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.normalBias=.025;key.shadow.bias=-.00008;key.shadow.blurSamples=8;scene.add(key,key.target);
+const fill=new T.HemisphereLight(0xdbeaf3,0x87998f,1.3);scene.add(fill);const rim=new T.RectAreaLight(0xc4e4ff,3,8,4);scene.add(rim);
+const pmrem=new T.PMREMGenerator(renderer);const room=new RoomEnvironment();const roomEnv=pmrem.fromScene(room,.04).texture;room.dispose();let studioEnv=null,customHDR=null;scene.environment=roomEnv;
+const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));const bokeh=new BokehPass(scene,camera,{focus:9,aperture:0,maxblur:.006});bokeh.enabled=false;composer.addPass(bokeh);const bloom=new UnrealBloomPass(new T.Vector2(1024,768),.1,.4,1.3);composer.addPass(bloom);composer.addPass(new OutputPass());
+const engine=new ReconstructionEngine(scene,runtime);
+let cameraEditing=false;controls.addEventListener('start',()=>{cameraEditing=true;});
+const grid=new T.GridHelper(40,40,0x788e98,0xb1bec4);grid.material.transparent=true;grid.material.opacity=.12;scene.add(grid);grid.position.y=.015;
+const originMarker=new T.Mesh(new T.TorusGeometry(.17,.008,8,48),new T.MeshBasicMaterial({color:'#638b7c',depthTest:false}));originMarker.rotation.x=-Math.PI/2;originMarker.renderOrder=20;scene.add(originMarker);
+const raycaster=new T.Raycaster(),pointer=new T.Vector2();let selectionBox=null;
+function cameraData(){return {position:camera.position.toArray(),target:controls.target.toArray(),fov:camera.fov};}
+function snapshot(){return {state:structuredClone(state),camera:cameraData(),flags:engine.records.map(r=>({uuid:r.o.uuid,visible:r.o.visible,exclude:!!r.o.userData.exclude}))};}
+function checkpoint(){undoStack.push(snapshot());if(undoStack.length>40)undoStack.shift();redoStack.length=0;$('dirty').style.opacity=1;}
+function restore(snap){Object.assign(state,snap.state);camera.position.fromArray(snap.camera.position);controls.target.fromArray(snap.camera.target);for(const f of snap.flags){const o=current?.root.getObjectByProperty('uuid',f.uuid);if(o){o.visible=f.visible;o.userData.exclude=f.exclude;}}applyRuntime();engine.rebuildFragments();renderInspector();renderTimeline();renderTree();}
+$('undo').onclick=()=>{if(!undoStack.length)return;redoStack.push(snapshot());restore(undoStack.pop());toast('已撤销设计参数');};$('redo').onclick=()=>{if(!redoStack.length)return;undoStack.push(snapshot());restore(redoStack.pop());toast('已重做');};
+function frameValue(keys,t){if(!keys?.length)return null;const sorted=[...keys].sort((a,b)=>a.time-b.time);if(t<=sorted[0].time)return sorted[0].value;if(t>=sorted.at(-1).time)return sorted.at(-1).value;let i=1;while(sorted[i].time<t)i++;const a=sorted[i-1],b=sorted[i],p=ease((t-a.time)/(b.time-a.time),'smooth');return T.MathUtils.lerp(a.value,b.value,p);}
+function animateCamera(t){if(cameraEditing&&!exporting&&!playing)return;const keys=state.cameraKeys;if(keys.length){const sorted=[...keys].sort((a,b)=>a.time-b.time);let a=sorted[0],b=sorted.at(-1);for(let i=1;i<sorted.length;i++)if(t<=sorted[i].time){a=sorted[i-1];b=sorted[i];break;}if(t<=sorted[0].time)a=b=sorted[0];if(t>=sorted.at(-1).time)a=b=sorted.at(-1);const p=a===b?0:ease((t-a.time)/(b.time-a.time),'smooth');camera.position.fromArray(a.position).lerp(new T.Vector3().fromArray(b.position),p);controls.target.fromArray(a.target).lerp(new T.Vector3().fromArray(b.target),p);camera.fov=T.MathUtils.lerp(a.fov,b.fov,p);
+ }else if(state.cameraMotion!=='locked'&&current){const p=ease(t/state.duration,'smooth'),base=current.camera.clone().sub(current.target);if(state.cameraMotion==='orbit')base.applyAxisAngle(new T.Vector3(0,1,0),(p-.5)*.38);if(state.cameraMotion==='dolly')base.multiplyScalar(1.2-p*.35);if(state.cameraMotion==='macro'){base.multiplyScalar(1.1-p*.6);base.y*=.7;}camera.position.copy(current.target).add(base);controls.target.copy(current.target);}
+}
+function temperature(k){let t=k/100,r,g,b;if(t<=66){r=255;g=99.4708*Math.log(t)-161.1196;b=t<=19?0:138.5177*Math.log(t-10)-305.0448;}else{r=329.6987*Math.pow(t-60,-.1332);g=288.1222*Math.pow(t-60,-.0755);b=255;}return new T.Color(T.MathUtils.clamp(r/255,0,1),T.MathUtils.clamp(g/255,0,1),T.MathUtils.clamp(b/255,0,1));}
+function applyRuntime(){Object.assign(runtime,state);for(const [name,keys] of Object.entries(state.paramKeys)){const v=frameValue(keys,state.time);if(v!==null)runtime[name]=v;}
+ const s=runtime;scene.background=s.transparent?null:new T.Color(s.background);scene.fog=s.fog>0&&!s.transparent?new T.FogExp2(s.background,s.fog):null;scene.environmentIntensity=s.envIntensity;scene.environmentRotation.y=s.envRotation*Math.PI/180;
+ scene.environment=s.environment==='custom'&&customHDR?customHDR:s.environment==='studio'&&studioEnv?studioEnv:roomEnv;
+ const backdrop=current?.asset==='car'?current.root.getObjectByName('摄影棚地面'):null;if(backdrop)backdrop.material.color.set(s.background).multiplyScalar(.72);
+ const scale=current?.scale||10,az=s.keyAzimuth*Math.PI/180,el=s.keyElevation*Math.PI/180;key.position.set(Math.cos(az)*Math.cos(el)*scale,Math.sin(el)*scale,Math.sin(az)*Math.cos(el)*scale);key.intensity=s.keyIntensity;key.color.copy(temperature(s.keyTemp));key.shadow.radius=s.keySize;fill.intensity=s.fill;rim.position.set(-scale*.5,scale*.35,-scale*.5);rim.width=s.keySize*2;rim.height=s.keySize;rim.intensity=s.rim;rim.lookAt(controls.target);
+ renderer.toneMappingExposure=s.exposure;bloom.strength=s.bloom;bloom.enabled=s.bloom>0&&!s.transparent;bokeh.enabled=s.aperture>0;bokeh.uniforms.focus.value=s.focus;bokeh.uniforms.aperture.value=s.aperture*.00002;
+ camera.fov=s.fov;animateCamera(s.time);camera.updateProjectionMatrix();grid.visible=s.grid&&!exporting;originMarker.visible=s.guides&&!exporting&&!comparing;originMarker.position.set(s.originX,s.originY+.035,s.originZ);originMarker.scale.setScalar(scale/10);
+ if(comparing){const savedRange=s.range;s.range=1;engine.update(s.reverse?0:1);s.range=savedRange;}else engine.update(s.time/s.duration);document.querySelector('.stage-wrap').classList.toggle('dark-shot',new T.Color(s.background).getHSL({}).l<.3);
+ $('seed-label').textContent=s.seed;$('origin-readout').textContent=`ORIGIN ${s.originX.toFixed(2)} / ${s.originY.toFixed(2)} / ${s.originZ.toFixed(2)}`;
+}
+function draw(){applyRuntime();if(mixer)mixer.setTime(state.time);controls.update();if(selectionBox)selectionBox.update();composer.render();}
+function resize(){if(exporting)return;const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);composer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}new ResizeObserver(resize).observe(stage);
+function refreshTime(){const f=Math.round(state.time*state.fps),sec=Math.floor(f/state.fps),pad=n=>String(n).padStart(2,'0');$('timecode').textContent=`${pad(Math.floor(sec/60))}:${pad(sec%60)}:${pad(f%state.fps)}`;if(document.activeElement!==$('current-time'))$('current-time').value=state.time.toFixed(3);$('scrub').value=state.time;$('playhead').style.left=`${state.time/state.duration*100}%`;const p=state.reverse?1-state.time/state.duration:state.time/state.duration;$('progress-label').innerHTML=`${Math.round(p*100)}<span>%</span>`;}
+function showLoading(show,label){$('loading').hidden=!show;if(label)$('loading').querySelector('b').textContent=label;}
+function disposeRoot(root){const gs=new Set(),ms=new Set(),ts=new Set();root.traverse(o=>{if(o.geometry)gs.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m){ms.add(m);for(const v of Object.values(m))if(v?.isTexture)ts.add(v);}});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());ts.forEach(t=>t.dispose());}
+function installScene(data,{fit=true}={}){const old=current?.root;engine.clear();current=data;if(old&&old!==data.root)disposeRoot(old);selection.clear();if(selectionBox){scene.remove(selectionBox);selectionBox.dispose();selectionBox=null;}engine.setRoot(data.root);mixer=data.animations?.length?new T.AnimationMixer(data.root):null;if(mixer)data.animations.forEach(c=>mixer.clipAction(c).play());
+ const span=data.scale||engine.box.getSize(new T.Vector3()).length();key.shadow.camera.left=key.shadow.camera.bottom=-span;key.shadow.camera.right=key.shadow.camera.top=span;key.shadow.camera.far=span*5;key.shadow.camera.updateProjectionMatrix();camera.near=Math.max(.01,span/2000);camera.far=Math.max(500,span*12);controls.maxDistance=span*6;
+ if(fit){camera.position.copy(data.camera);controls.target.copy(data.target);}renderTree();$('scene-label').textContent=data.label;$('asset-status').textContent=`${engine.records.length} 个网格 · 本地资源`;$('render-stats').textContent=`WEBGL 2 · ${Math.round((data.root.children.length))} GROUPS · ${runtime.density.toLocaleString()} FRAGMENTS`;document.querySelectorAll('[data-scene]').forEach(b=>b.classList.toggle('active',b.dataset.scene===state.scene));showLoading(false);resize();refreshTime();draw();
+}
+async function switchScene(name){if(busy)return;busy=true;showLoading(true);playing=false;cameraEditing=false;try{const data=name==='car'?await carScene():name==='courtyard'?await courtyardScene():districtScene();state.scene=name;state.originX=state.originY=state.originZ=0;state.width=name==='car'?.75:2.6;state.size=name==='car'?.045:.14;state.drift=name==='car'?.65:2.2;state.cameraKeys=[];applyRuntime();installScene(data);undoStack.length=redoStack.length=0;renderInspector();renderTimeline();}catch(e){showLoading(false);toast('场景加载失败：'+e.message);console.error(e);}finally{busy=false;}}
+document.querySelectorAll('[data-scene]').forEach(b=>b.onclick=()=>switchScene(b.dataset.scene));
+function select(o,add=false){if(!add)selection.clear();if(selection.has(o))selection.delete(o);else selection.add(o);if(selectionBox){scene.remove(selectionBox);selectionBox.dispose();selectionBox=null;}if(selection.size===1){selectionBox=new T.BoxHelper([...selection][0],0x779c87);scene.add(selectionBox);}renderTree();}
+function renderTree(){const tree=$('scene-tree');tree.replaceChildren();if(!current)return;let count=0;const recurse=(o,depth)=>{if(o.name.startsWith('__'))return;const row=document.createElement('div');row.className='tree-row'+(selection.has(o)?' selected':'');row.style.paddingLeft=`${Math.min(depth,4)*10+4}px`;const check=document.createElement('input');check.type='checkbox';check.checked=selection.has(o);check.setAttribute('aria-label','选择 '+o.name);check.onclick=e=>{e.stopPropagation();select(o,true);};row.append(check);const icon=document.createElement('span');icon.className='tree-icon';icon.textContent=o.isMesh?'◇':'▱';row.append(icon);const name=document.createElement('span');name.className='tree-name';name.textContent=o.name||`网格 ${++count}`;name.title=name.textContent;row.append(name);
+ const vis=document.createElement('button');vis.textContent=o.visible?'◉':'○';vis.title=o.visible?'隐藏对象':'显示对象';vis.className=o.visible?'':'off';vis.onclick=e=>{e.stopPropagation();checkpoint();o.visible=!o.visible;applyRuntime();engine.rebuildFragments();renderTree();};row.append(vis);
+ const exclude=document.createElement('button');exclude.textContent=o.userData.exclude?'留':'构';exclude.title='切换排除重建';exclude.className=o.userData.exclude?'off':'';exclude.onclick=e=>{e.stopPropagation();checkpoint();o.userData.exclude=!o.userData.exclude;applyRuntime();engine.rebuildFragments();renderTree();};row.append(exclude);row.onclick=e=>select(o,e.ctrlKey||e.metaKey);tree.append(row);if(o.children&&!o.userData.collapsed)o.children.forEach(c=>recurse(c,depth+1));};recurse(current.root,0);$('object-count').textContent=engine.records.length+' MESHES';}
+$('group-selected').onclick=()=>{if(selection.size<2){toast('勾选至少两个对象后分组');return;}const objects=[...selection].filter(o=>o!==current.root&&!([...selection].some(p=>p!==o&&isAncestor(p,o))));if(objects.length<2){toast('请选取至少两个独立对象');return;}const group=new T.Group();group.name='自定义分组 '+Date.now().toString().slice(-4);current.root.add(group);objects.forEach(o=>group.attach(o));current.root.updateMatrixWorld(true);engine.setRoot(current.root);select(group);toast('已保留世界位置并创建分组');};function isAncestor(a,b){for(let p=b.parent;p;p=p.parent)if(p===a)return true;return false;}
+$('origin-selected').onclick=()=>{if(!selection.size)return toast('先选择主体或对象');checkpoint();const box=new T.Box3().setFromObject([...selection][0]),c=box.getCenter(new T.Vector3());state.originX=c.x;state.originY=box.min.y;state.originZ=c.z;renderInspector();toast('重建起点已绑定到所选对象底部');};
+let down=null;renderer.domElement.addEventListener('pointerdown',e=>down={x:e.clientX,y:e.clientY});renderer.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down.x,e.clientY-down.y)>5||e.button!==0||!current)return;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObject(current.root,true).find(h=>engine.isVisible(h.object));if(!hit)return;if(focusPick){checkpoint();state.focus=camera.position.distanceTo(hit.point);focusPick=false;$('focus-pick').classList.remove('active');renderInspector();toast('已拾取焦点距离');}else if(e.shiftKey){checkpoint();state.originX=hit.point.x;state.originY=hit.point.y;state.originZ=hit.point.z;renderInspector();toast('已设置三维重建起点');}else select(hit.object,e.ctrlKey);});
+$('focus-pick').onclick=()=>{focusPick=!focusPick;$('focus-pick').classList.toggle('active',focusPick);toast('点击视口中的物体设置焦点');};
+function fitCamera(){if(!current)return;checkpoint();camera.position.copy(current.camera);controls.target.copy(current.target);state.cameraMotion='locked';state.cameraKeys=[];state.fov=38;renderInspector();renderTimeline();} $('fit').onclick=fitCamera;
+$('compare').onclick=()=>{comparing=!comparing;$('compare').classList.toggle('active',comparing);toast(comparing?'原始完整场景':'重建效果');};$('fullscreen').onclick=()=>{document.body.classList.toggle('presentation');resize();};
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color('#dae2e9');
-const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 5000);
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.075;
-scene.add(new THREE.HemisphereLight(0xf5f8ff, 0x85929f, 2.0));
-const key = new THREE.DirectionalLight(0xffffff, 3.1);
-key.position.set(8, 15, 10);
-key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
-key.shadow.camera.left = key.shadow.camera.bottom = -50;
-key.shadow.camera.right = key.shadow.camera.top = 50;
-scene.add(key);
+function slider(key,label,min,max,step,unit=''){const v=state[key];return `<label class="control"><span class="control-line"><span>${label}${unit?' / '+unit:''}</span><input aria-label="${label}数值" data-key="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${v}"></span><input aria-label="${label}" data-key="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${v}"></label>`;}
+function selectControl(key,label,options){return `<label class="control"><span class="control-line">${label}</span><select data-key="${key}" aria-label="${label}">${options.map(([v,n])=>`<option value="${v}" ${state[key]===v?'selected':''}>${n}</option>`).join('')}</select></label>`;}
+function toggle(key,label){return `<label class="check"><input type="checkbox" data-key="${key}" ${state[key]?'checked':''}>${label}</label>`;}
+const shapeOptions=[['mixed','随机混合'],['triangle','三角片'],['square','方形片'],['hexagon','六角片'],['strip','长条片'],['irregular','不规则多边形']];const materialOptions=[['ceramic','白色陶瓷'],['metal','镜面金属'],['glass','光学玻璃'],['iridescent','虹彩薄膜'],['original','表面颜色采样']];
+function group(title,en,body){return `<section class="control-group"><div class="control-heading">${title}<span class="micro">${en}</span></div>${body}</section>`;}
+function renderInspector(){let html='';const selected=presets.find(p=>p.id===state.preset)||userPresets.find(p=>p.id===state.preset)||presets[0];
+ if(panel==='presets'){html=`<div class="preset-grid">${[...presets,...userPresets].map((p,i)=>`<button data-preset="${escape(p.id)}" class="preset-card ${state.preset===p.id?'active':''}"><div class="preset-visual ${presets.some(v=>v.id===p.id)?'rendered':''}" style="--swatch:${/^#[0-9a-f]{6}$/i.test(p.color)?p.color:'#59676c'};${presets.some(v=>v.id===p.id)?`background-image:url('./previews/${p.id}.jpg');background-size:cover;background-position:center`:''}"></div><b>${String(i+1).padStart(2,'0')} ${escape(p.name)}</b><small>${escape(p.en)}</small></button>`).join('')}</div><p class="preset-desc">${escape(selected.desc)}</p>`;
+ html+=group('快速设计','QUICK DESIGN',slider('width','波前宽度',.1,10,.05,'m')+slider('speed','传播速度',.25,3,.05,'×')+selectControl('shape','碎片形状',shapeOptions)+slider('size','碎片尺寸',.015,.6,.005,'m')+slider('density','表面碎片数',200,24000,200)+selectControl('shardMaterial','碎片材质',materialOptions));
+ }else if(panel==='reconstruction'){
+ html=group('空间传播场','SPATIAL FIELD',selectControl('mode','传播形式',[['radial','水平径向'],['sphere','三维球形'],['direction','方向扫描']])+slider('axis','扫描方向',-180,180,1,'°')+slider('width','波前宽度',.1,10,.05,'m')+slider('speed','传播速度',.25,3,.05,'×')+slider('range','范围倍率',.25,2,.05,'×')+selectControl('order','空间顺序',[['ground','地面先行 · 向上攀升'],['uniform','均匀传播']])+selectControl('curve','传播曲线',[['smooth','平滑缓入缓出'],['linear','匀速'],['steps','离散阶梯']])+toggle('reverse','逆向解构'));
+ html+=group('重建起点','ORIGIN',`<div class="xyz">${['X','Y','Z'].map(k=>`<label>${k}<input data-key="origin${k}" type="number" step=".1" value="${state['origin'+k]}"></label>`).join('')}</div><p class="hint">Shift + 点击模型表面，也可从场景树选择主体后设置起点。</p>`);
+ html+=group('构建阶段','STAGES',slider('wire','线框权重',0,1,.01)+slider('white','白模权重',0,1,.01)+slider('points','点云权重',0,1,.01)+slider('materialLag','材质追随延迟',0,3,.05)+slider('glitch','局部信号故障',0,1,.01));
+ }else if(panel==='fragments'){
+ html=group('实体碎片','GEOMETRY',selectControl('shape','碎片形状',shapeOptions)+slider('density','表面碎片数',200,24000,200)+slider('size','尺寸',.015,.6,.005,'m')+slider('thickness','厚度 / 尺寸',.02,1,.01)+slider('seed','随机种子',1,9999,1));
+ html+=group('吸附与运动','CHOREOGRAPHY',slider('drift','法线漂移距离',0,8,.05,'m')+slider('spin','翻转幅度',0,8,.1,'π'));
+ html+=group('材质光学','MATERIAL',selectControl('shardMaterial','材质类型',materialOptions)+`<label class="control"><span class="control-line">碎片颜色</span><input type="color" data-key="shardColor" value="${state.shardColor}"></label>`+slider('roughness','粗糙度',0,1,.01)+slider('metalness','金属度',0,1,.01)+slider('transmission','玻璃透射',0,1,.01)+slider('ior','玻璃折射率',1,2.5,.01));
+ }else if(panel==='lighting'){
+ html=group('环境与反射','ENVIRONMENT',selectControl('environment','反射环境',[['studio','Poly Haven / 影棚 HDRI'],['room','程序柔光影棚'],...(customHDR?[['custom','自定义 HDRI']]:[])])+`<button id="load-hdr" class="import-button">＋ 载入本地 HDRI / .hdr</button>`+slider('envIntensity','环境亮度',0,4,.05)+slider('envRotation','环境旋转',-180,180,1,'°'));
+ html+=group('摄影灯光','LIGHTING',slider('keyAzimuth','主光方位',-180,180,1,'°')+slider('keyElevation','主光俯仰',5,85,1,'°')+slider('keyIntensity','主光强度',0,12,.1)+slider('keyTemp','主光色温',2500,10000,100,'K')+slider('keySize','柔光面积与阴影柔度',.5,10,.1)+slider('fill','补光',0,5,.1)+slider('rim','轮廓光',0,12,.1));
+ html+=`<details><summary>曝光、后期与背景</summary>${slider('exposure','曝光',.2,3,.05)+slider('bloom','Bloom',0,1,.01)+slider('fog','空间雾',0,.06,.001)+`<label class="control"><span class="control-line">虚空背景</span><input type="color" data-key="background" value="${state.background}"></label>`}</details>`;
+ }else if(panel==='camera'){
+ html=group('镜头与运镜','CINEMATOGRAPHY',selectControl('cameraMotion','运镜预设',[['locked','自由观察 / 定镜'],['dolly','轻微推近'],['orbit','克制绕行揭示'],['macro','全景 → 材质特写']])+slider('fov','视角',15,75,1,'°')+selectControl('aspect','导出画幅',[['16:9','横版 16:9'],['9:16','竖版 9:16'],['1:1','方形 1:1'],['2.39:1','电影 2.39:1']])+selectControl('quality','实时画质',[['high','高质量 / 1.5× 像素'],['draft','流畅预览 / 1× 像素']]));
+ html+=group('景深与焦点','OPTICS',slider('focus','焦点距离',.1,100,.1,'m')+slider('aperture','景深强度',0,10,.1)+`<p class="hint">使用顶部「拾取焦点」，然后点击模型。景深默认关闭，适合技术观察。</p>`);
+ html+=group('编辑辅助','VIEWPORT',toggle('grid','显示工作网格')+toggle('guides','显示重建原点')+`<button id="clear-camera" class="import-button">清除摄影机关键帧 (${state.cameraKeys.length})</button><p class="hint">移动视角后点击底部「摄影机关键帧」。至少两个关键帧即可形成可编辑运镜。</p>`);
+ }
+ $('inspector-content').innerHTML=html;document.querySelectorAll('[data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===panel));$('preset-badge').textContent=`${String(presets.indexOf(selected)+1).padStart(2,'0')} / ${selected.en}`;$('shot-name').textContent=state.scene==='district'?'让世界，重新成形。':'记忆从这里开始。';
+ document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>applyPreset(b.dataset.preset));
+ for(const input of document.querySelectorAll('[data-key]')){input.onpointerdown=()=>{if(input.type==='range')checkpoint();};input.onfocus=()=>{if(input.type==='number'||input.type==='color')checkpoint();};input.onchange=()=>{if(input.tagName==='SELECT'||input.type==='checkbox')checkpoint();setControl(input,true);};input.oninput=()=>{if(input.type!=='checkbox'&&input.tagName!=='SELECT')setControl(input,false);};}
+ if($('load-hdr'))$('load-hdr').onclick=()=>$('hdr-file').click();if($('clear-camera'))$('clear-camera').onclick=()=>{checkpoint();state.cameraKeys=[];renderTimeline();renderInspector();toast('已清除运镜关键帧');};
+}
+const geometryKeys=new Set(['density','seed','shape']),matKeys=new Set(['shardMaterial','shardColor','roughness','metalness','transmission','ior']);let rebuildTimer;
+function setControl(input,committed){const key=input.dataset.key;let val=input.type==='checkbox'?input.checked:input.type==='number'||input.type==='range'?Number(input.value):input.value;if(typeof val==='number'&&!Number.isFinite(val))return;if(input.min!==''&&typeof val==='number')val=Math.max(Number(input.min),val);if(input.max!==''&&typeof val==='number')val=Math.min(Number(input.max),val);if(key==='speed'){const oldDuration=state.duration,newDuration=T.MathUtils.clamp(oldDuration*state.speed/val,1,60),factor=newDuration/oldDuration;val=state.speed/factor;state.duration=newDuration;state.time*=factor;state.cameraKeys.forEach(k=>k.time*=factor);Object.values(state.paramKeys).forEach(keys=>keys.forEach(k=>k.time*=factor));renderTimeline();}state[key]=val;
+ document.querySelectorAll(`[data-key="${key}"]`).forEach(el=>{if(el!==input)el.value=val;});applyRuntime();
+ if(geometryKeys.has(key)||matKeys.has(key)){clearTimeout(rebuildTimer);rebuildTimer=setTimeout(()=>{engine.rebuildFragments();$('render-stats').textContent=`WEBGL 2 · ${engine.records.length} MESHES · ${state.density.toLocaleString()} FRAGMENTS`;},committed?0:130);}
+ if(key==='quality'){renderer.setPixelRatio(val==='draft'?1:Math.min(devicePixelRatio,1.5));resize();$('quality-badge').textContent=val==='draft'?'PBR · 流畅预览':'PBR · 高质量';}
+ refreshTime();
+}
+function applyPreset(id){const p=[...presets,...userPresets].find(p=>p.id===id);if(!p)return;checkpoint();const keep={scene:state.scene,time:state.time,duration:state.duration,fps:state.fps,originX:state.originX,originY:state.originY,originZ:state.originZ,cameraKeys:state.cameraKeys,paramKeys:state.paramKeys};Object.assign(state,structuredClone(defaults),p.values,keep,{preset:id});if(state.scene==='district'){state.width*=2;state.size*=2;state.drift*=2;}applyRuntime();engine.rebuildFragments();renderInspector();renderTimeline();toast(p.name+' · 已应用材质、光影和空间节奏');}
+document.querySelectorAll('[data-panel]').forEach(b=>b.onclick=()=>{panel=b.dataset.panel;renderInspector();});
+$('reset').onclick=()=>applyPreset(state.preset);$('save-preset').onclick=()=>{const name=prompt('为当前设计命名','自定义记忆 '+(userPresets.length+1));if(!name)return;const p={id:'user-'+Date.now(),name:name.slice(0,30),en:'CUSTOM DESIGN',desc:'自定义光影、碎片与传播组合',color:state.background,values:structuredClone(state)};userPresets.push(p);try{localStorage.setItem('animus-presets',JSON.stringify(userPresets));state.preset=p.id;renderInspector();toast('预设已保存在本机浏览器');}catch{toast('存储空间不足，请保存工程');}};
 
-const grid = new THREE.GridHelper(40, 40, 0x8595a4, 0xb3c1cc);
-scene.add(grid);
-const marker = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12), new THREE.MeshBasicMaterial({ color: 0x0d9de0, depthTest: false }));
-marker.renderOrder = 100;
-scene.add(marker);
-const origin = new THREE.Vector3();
-let target = null;
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-const loader = new GLTFLoader();
+function renderTimeline(){const n=10;$('ruler').innerHTML=Array.from({length:n+1},(_,i)=>`<span>${(state.duration*i/n).toFixed(1)}s</span>`).join('');const tracks=[{left:0,width:100,keys:[]},{left:8,width:73,keys:state.paramKeys.drift||[]},{left:18,width:82,keys:state.paramKeys.white||[]},{left:0,width:100,keys:state.cameraKeys}];$('tracks').innerHTML=tracks.map((t,i)=>`<div class="track"><span class="track-band" style="left:${t.left}%;width:${t.width}%"></span>${t.keys.map(k=>`<button class="key-dot" title="${k.time.toFixed(2)}s${k.value!==undefined?' / '+k.value:''}" data-time="${k.time}" style="left:${k.time/state.duration*100}%"></button>`).join('')}</div>`).join('');document.querySelectorAll('.key-dot').forEach(k=>k.onclick=()=>{state.time=Number(k.dataset.time);playing=false;refreshTime();});$('scrub').max=state.duration;$('scrub').step=1/state.fps;$('duration').value=state.duration;$('fps-select').value=state.fps;$('export-end').value=state.duration;refreshTime();}
+function togglePlay(){if(exporting)return;cameraEditing=false;playing=!playing;if(playing&&state.time>=state.duration)state.time=0;$('play').textContent=playing?'Ⅱ':'▶';}
+$('play').onclick=togglePlay;$('start').onclick=()=>{state.time=0;playing=false;refreshTime();};$('prev').onclick=()=>{state.time=Math.max(0,state.time-1/state.fps);playing=false;refreshTime();};$('next').onclick=()=>{state.time=Math.min(state.duration,state.time+1/state.fps);playing=false;refreshTime();};$('loop').onclick=()=>{state.loop=!state.loop;$('loop').classList.toggle('active',state.loop);};$('scrub').oninput=e=>{state.time=Number(e.target.value);playing=false;$('play').textContent='▶';refreshTime();};$('duration').onchange=e=>{checkpoint();state.duration=T.MathUtils.clamp(Number(e.target.value)||10,1,60);state.time=Math.min(state.time,state.duration);renderTimeline();};$('fps-select').onchange=e=>{checkpoint();state.fps=Number(e.target.value);renderTimeline();};
+$('add-camera-key').onclick=()=>{checkpoint();const key={time:Number(state.time.toFixed(4)),...cameraData()};state.cameraKeys=state.cameraKeys.filter(k=>Math.abs(k.time-key.time)>.5/state.fps);state.cameraKeys.push(key);state.cameraKeys.sort((a,b)=>a.time-b.time);renderTimeline();toast(`摄影机关键帧 · ${state.time.toFixed(2)}s`);};$('add-param-key').onclick=()=>{$('key-value').value=state[$('key-param').value];$('key-dialog').showModal();};$('key-param').onchange=()=>{$('key-value').value=state[$('key-param').value];};$('key-save').onclick=()=>{checkpoint();const p=$('key-param').value,value=Number($('key-value').value);if(!Number.isFinite(value))return;const keys=state.paramKeys[p]||[];state.paramKeys[p]=keys.filter(k=>Math.abs(k.time-state.time)>.5/state.fps);state.paramKeys[p].push({time:state.time,value});state.paramKeys[p].sort((a,b)=>a.time-b.time);renderTimeline();$('key-dialog').close();toast('已写入参数关键帧');};$('key-clear').onclick=()=>{checkpoint();delete state.paramKeys[$('key-param').value];renderTimeline();$('key-dialog').close();};
+window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||document.querySelector('dialog[open]'))return;if(e.code==='Space'){e.preventDefault();togglePlay();}if(e.key==='Escape'){document.body.classList.remove('presentation');resize();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();$(e.shiftKey?'redo':'undo').click();}if(e.key==='ArrowLeft')$('prev').click();if(e.key==='ArrowRight')$('next').click();});
 
-function disposeGroup(group) {
-  if (!group) return;
-  const geometries = new Set();
-  const materials = new Set();
-  group.traverse((node) => {
-    if (!node.isMesh) return;
-    if (node.geometry) geometries.add(node.geometry);
-    for (const material of Array.isArray(node.material) ? node.material : [node.material]) if (material) materials.add(material);
-  });
-  for (const g of geometries) g.dispose();
-  for (const m of materials) {
-    // Resources from replaced imports are owned by this viewer, not by the future reusable engine.
-    for (const value of Object.values(m)) if (value?.isTexture) value.dispose();
-    m.dispose();
+async function importFiles(files){if(busy)return;const model=files.find(f=>/\.(glb|gltf)$/i.test(f.name));if(!model)return toast('请选择 GLB 或 GLTF 及其关联资源');busy=true;showLoading(true,'正在解析 '+model.name);const urls=new Map();try{for(const f of files)urls.set(f.name,URL.createObjectURL(f));const manager=new T.LoadingManager();manager.setURLModifier(url=>{const path=decodeURIComponent(url.split('/').at(-1));return urls.get(path)||url;});const {loader,draco}=createLoader(manager);const gltf=await loader.loadAsync(urls.get(model.name));draco.dispose();const root=gltf.scene;root.name=model.name;root.updateMatrixWorld(true);const box=new T.Box3().setFromObject(root),center=box.getCenter(new T.Vector3()),span=box.getSize(new T.Vector3()).length();if(!Number.isFinite(span)||span<1e-7)throw new Error('场景中没有有效几何体');const target=center.clone(),position=center.clone().add(new T.Vector3(.8,.48,1).multiplyScalar(span*.9));root.traverse(o=>{if(o.isMesh)o.castShadow=o.receiveShadow=true;});state.scene='import';state.originX=center.x;state.originY=box.min.y;state.originZ=center.z;state.width=span*.06;state.size=span*.004;state.drift=span*.08;state.cameraKeys=[];applyRuntime();installScene({root,label:model.name,target,camera:position,scale:span,animations:gltf.animations,asset:'import'});undoStack.length=redoStack.length=0;renderInspector();toast('已导入 '+model.name+' · 层级与原始材质已保留');}catch(e){console.error(e);showLoading(false);toast('导入失败：'+e.message);}finally{urls.forEach(url=>URL.revokeObjectURL(url));busy=false;}}
+$('import').onclick=()=>$('model-files').click();$('model-files').onchange=async e=>{await importFiles([...e.target.files]);e.target.value='';};for(const name of ['dragenter','dragover'])stage.addEventListener(name,e=>e.preventDefault());stage.addEventListener('drop',e=>{e.preventDefault();importFiles([...e.dataTransfer.files]);});
+async function loadHDR(url,custom=false){try{const hdr=await new RGBELoader().loadAsync(url);hdr.mapping=T.EquirectangularReflectionMapping;const env=pmrem.fromEquirectangular(hdr).texture;hdr.dispose();if(custom){customHDR?.dispose();customHDR=env;state.environment='custom';renderInspector();toast('已载入自定义 HDRI');}else studioEnv=env;}catch(e){console.warn('HDRI fallback',e);if(custom)toast('HDRI 读取失败：'+e.message);else toast('HDRI 未就绪，正在使用程序柔光影棚');}}
+$('hdr-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;const url=URL.createObjectURL(f);await loadHDR(url,true);if(state.environment==='custom')customHDRSource=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(f);});URL.revokeObjectURL(url);e.target.value='';};
+function projectData(){if(!current)throw new Error('尚未加载场景');const originals=engine.records.map(r=>r.o.material);engine.records.forEach(r=>r.o.material=r.original);const sceneJSON=current.root.toJSON();engine.records.forEach((r,i)=>r.o.material=originals[i]);return {format:'animus-studio',version:1,state:structuredClone(state),camera:cameraData(),scene:sceneJSON,animations:current.animations.map(c=>T.AnimationClip.toJSON(c)),environment:customHDRSource,asset:current.asset,label:current.label,target:current.target.toArray(),home:current.camera.toArray(),scale:current.scale,credits:'参见 ASSETS.md'};}
+function readProjectState(input){const clean=structuredClone(defaults);for(const [key,def] of Object.entries(defaults)){const value=input?.[key];if(typeof def==='number'&&typeof value==='number'&&Number.isFinite(value))clean[key]=value;else if(typeof def==='boolean'&&typeof value==='boolean')clean[key]=value;else if(typeof def==='string'&&typeof value==='string')clean[key]=value;}
+ for(const key of ['background','shardColor'])if(!/^#[0-9a-f]{6}$/i.test(clean[key]))clean[key]=defaults[key];
+ const vector=v=>Array.isArray(v)&&v.length===3&&v.every(n=>typeof n==='number'&&Number.isFinite(n));clean.cameraKeys=(Array.isArray(input?.cameraKeys)?input.cameraKeys:[]).filter(k=>Number.isFinite(k.time)&&Number.isFinite(k.fov)&&vector(k.position)&&vector(k.target));clean.paramKeys={};for(const [key,keys] of Object.entries(input?.paramKeys||{}))if(typeof defaults[key]==='number'&&Array.isArray(keys))clean.paramKeys[key]=keys.filter(k=>Number.isFinite(k.time)&&Number.isFinite(k.value));
+ clean.duration=T.MathUtils.clamp(clean.duration,1,60);clean.fps=[24,30,60].includes(clean.fps)?clean.fps:30;clean.density=T.MathUtils.clamp(clean.density,200,24000);clean.time=T.MathUtils.clamp(clean.time,0,clean.duration);return clean;
+}
+async function openProject(data){if(data.format!=='animus-studio'||data.version!==1||!data.scene?.object)throw new Error('不是有效的 Animus Studio 工程');const cleanState=readProjectState(data.state);showLoading(true,'恢复工程与材质');const root=await new T.ObjectLoader().parseAsync(data.scene);Object.assign(state,cleanState);cameraEditing=false;customHDRSource=typeof data.environment==='string'&&data.environment.startsWith('data:')?data.environment:null;if(customHDRSource)await loadHDR(customHDRSource,true);const dataScene={root,label:data.label,target:new T.Vector3().fromArray(data.target),camera:new T.Vector3().fromArray(data.home),scale:data.scale,animations:(data.animations||[]).map(c=>T.AnimationClip.parse(c)),asset:data.asset};applyRuntime();installScene(dataScene,{fit:false});camera.position.fromArray(data.camera.position);controls.target.fromArray(data.camera.target);state.fov=data.camera.fov;renderInspector();renderTimeline();undoStack.length=redoStack.length=0;toast('工程已恢复 · 场景、对象状态和关键帧');}
+$('save-project').onclick=()=>{try{const blob=new Blob([JSON.stringify(projectData())],{type:'application/json'});download(blob,'重建镜头.animus');$('dirty').style.opacity=.2;toast('已保存完整场景、设计参数与关键帧');}catch(e){toast('保存失败：'+e.message);}};$('open-project').onclick=()=>$('project-file').click();$('project-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{await openProject(JSON.parse(await file.text()));}catch(err){showLoading(false);toast('工程读取失败：'+err.message);}e.target.value='';};
+
+function ratio(){return state.aspect==='9:16'?9/16:state.aspect==='1:1'?1:state.aspect==='2.39:1'?2.39:16/9;}
+$('export-open').onclick=()=>{$('export-status').textContent=`${state.aspect} · ${state.fps} FPS · PNG 线性时间采样`;$('export-dialog').showModal();};$('export-cancel').onclick=()=>{cancelExport=true;};
+async function capturePNG(){draw();return await new Promise(resolve=>renderer.domElement.toBlob(resolve,'image/png'));}
+if(window.showDirectoryPicker)$('export-format').insertAdjacentHTML('afterbegin','<option value="folder">PNG 序列 / 流式写入文件夹</option>');
+async function exportRun(){if(exporting||busy)return;const format=$('export-format').value,width=Number($('export-size').value),height=Math.round(width/ratio()),begin=T.MathUtils.clamp(Number($('export-start').value)||0,0,state.duration),end=T.MathUtils.clamp(Number($('export-end').value)||state.duration,begin,state.duration);let directory;if(format==='folder'){try{directory=await window.showDirectoryPicker({mode:'readwrite'});}catch{return;}}const old={time:state.time,transparent:state.transparent,pixelRatio:renderer.getPixelRatio(),camera:cameraData(),comparing};playing=false;exporting=true;cancelExport=false;comparing=false;$('export-run').disabled=true;$('export-cancel').hidden=false;if(selectionBox)selectionBox.visible=false;
+ renderer.setPixelRatio(1);renderer.setSize(width,height,false);composer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();state.transparent=$('export-alpha').checked&&format!=='webm';
+ try{
+  if(format==='still'){const png=await capturePNG();if(!png)throw new Error('浏览器未返回帧');download(png,`Animus_${Math.round(state.time*state.fps).toString().padStart(5,'0')}.png`);}
+  else if(format==='png'||format==='folder'){const count=Math.max(1,Math.round((end-begin)*state.fps)+1),files=[];let bytes=0;
+   const write=async(name,blob)=>{const file=await directory.getFileHandle(name,{create:true});const writer=await file.createWritable();await writer.write(blob);await writer.close();};
+   for(let i=0;i<count;i++){if(cancelExport)break;state.time=Math.min(end,begin+i/state.fps);const png=await capturePNG();if(!png)throw new Error('帧编码失败');const name=`Animus_${String(i).padStart(5,'0')}.png`;if(directory)await write(name,png);else{bytes+=png.size;if(bytes>512*1024*1024)throw new Error('ZIP 缓冲超过 512 MB，请使用文件夹输出或缩短区间');files.push({name,blob:png});}$('export-status').textContent=`逐帧渲染 ${i+1} / ${count}`;$('export-bar').style.width=`${(i+1)/count*100}%`;await new Promise(r=>requestAnimationFrame(r));}
+   if(!cancelExport){const manifest=new Blob([JSON.stringify({width,height,fps:state.fps,begin,end,frames:count,preset:state.preset,seed:state.seed},null,2)]);if(directory)await write('manifest.json',manifest);else{$('export-status').textContent='打包 PNG 序列…';files.push({name:'manifest.json',blob:manifest});download(await zip(files),'Animus_PNG_Sequence.zip');}}
+  }else{
+   if(!window.MediaRecorder)throw new Error('浏览器不支持 MediaRecorder');const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8'].find(m=>MediaRecorder.isTypeSupported(m));if(!mime)throw new Error('没有可用的 WebM 编码器');const stream=renderer.domElement.captureStream(state.fps),recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:24000000}),chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};const stopped=new Promise(r=>recorder.onstop=r);recorder.start();const start=performance.now();state.time=begin;
+   await new Promise(resolve=>{const tick=()=>{const t=(performance.now()-start)/1000;state.time=Math.min(end,begin+t);draw();$('export-status').textContent=`实时录制 ${state.time.toFixed(1)} / ${end.toFixed(1)}s`;$('export-bar').style.width=`${(state.time-begin)/Math.max(.001,end-begin)*100}%`;if(cancelExport||state.time>=end)resolve();else requestAnimationFrame(tick);};tick();});recorder.stop();await stopped;stream.getTracks().forEach(t=>t.stop());if(!cancelExport)download(new Blob(chunks,{type:'video/webm'}),'Animus_Reconstruction.webm');
   }
+  $('export-status').textContent=cancelExport?'已取消导出':'导出完成 · 文件已生成';toast(cancelExport?'已取消导出':'导出完成');
+ }catch(e){console.error(e);$('export-status').textContent='导出失败：'+e.message;toast('导出失败：'+e.message);}finally{state.time=old.time;state.transparent=old.transparent;comparing=old.comparing;exporting=false;renderer.setPixelRatio(old.pixelRatio);camera.position.fromArray(old.camera.position);controls.target.fromArray(old.camera.target);if(selectionBox)selectionBox.visible=true;$('export-run').disabled=false;$('export-cancel').hidden=true;resize();refreshTime();}
 }
-
-function fitCamera(root) {
-  root.updateWorldMatrix(true, true);
-  const box = new THREE.Box3().setFromObject(root);
-  if (box.isEmpty()) return;
-  const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
-  const radius = Math.max(size.length() * 0.65, 1);
-  const distance = radius / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  camera.position.copy(center).add(new THREE.Vector3(distance * 0.75, distance * 0.5, distance));
-  controls.target.copy(center);
-  camera.near = Math.max(distance / 1000, 0.01);
-  camera.far = Math.max(distance * 30, 100);
-  camera.updateProjectionMatrix();
-  controls.update();
-  const desiredOrigin = new THREE.Vector3(center.x, box.min.y, center.z);
-  setOrigin(desiredOrigin);
-  grid.position.y = box.min.y - 0.01;
-  grid.scale.setScalar(Math.max(0.1, size.length() / 25));
-}
-function setOrigin(point) {
-  origin.copy(point);
-  marker.position.copy(origin);
-  marker.scale.setScalar(Math.max(.4, new THREE.Box3().setFromObject(target).getSize(new THREE.Vector3()).length() / 25));
-  originLabel.textContent = `X ${origin.x.toFixed(2)} / Y ${origin.y.toFixed(2)} / Z ${origin.z.toFixed(2)}`;
-}
-function replaceTarget(root, label) {
-  if (target) { scene.remove(target); disposeGroup(target); }
-  target = root;
-  scene.add(root);
-  fitCamera(root);
-  status.textContent = label;
-}
-function sampleScene() {
-  const group = new THREE.Group();
-  const matte = new THREE.MeshStandardMaterial({ color: 0xd8dde2, roughness: .83 });
-  const stone = new THREE.MeshStandardMaterial({ color: 0x6c7e8e, roughness: .93 });
-  const metal = new THREE.MeshStandardMaterial({ color: 0x263c50, metalness: .7, roughness: .31 });
-  const copper = new THREE.MeshStandardMaterial({ color: 0xe0a35e, metalness: .8, roughness: .26 });
-  const add = (geometry, material, x, y, z) => {
-    const m = new THREE.Mesh(geometry, material);
-    m.position.set(x, y, z);
-    m.castShadow = true;
-    m.receiveShadow = true;
-    group.add(m);
-    return m;
-  };
-  add(new THREE.BoxGeometry(14, .3, 14), matte, 0, -.15, 0);
-  for (const [x,z,height] of [[-4,-3,4],[-1,-3,6],[3,-3,3],[-4,2,5],[0,2,2.4],[4,3,5.5]]) {
-    add(new THREE.BoxGeometry(1.8, height, 1.8), stone, x, height / 2, z);
-    add(new THREE.BoxGeometry(2.1, .15, 2.1), copper, x, height + .075, z);
-  }
-  add(new THREE.BoxGeometry(3.6, .35, 2.3), metal, 0, .65, -0.2);
-  for (const [x,z] of [[-1.5,-1.1],[1.5,-1.1],[-1.5,.7],[1.5,.7]]) add(new THREE.BoxGeometry(.16, .7, .16), metal, x, .35, z-.2);
-  add(new THREE.TorusGeometry(1.0, .13, 12, 64), copper, 0, 2.3, 0).rotation.x = Math.PI/2;
-  return group;
-}
-
-fileInput.addEventListener('change', async () => {
-  const file = fileInput.files?.[0];
-  if (!file) return;
-  status.textContent = `正在读取 ${file.name}…`;
-  const url = URL.createObjectURL(file);
-  try {
-    const gltf = await loader.loadAsync(url);
-    // Imported animations are preserved in gltf; P4 will add timeline control.
-    replaceTarget(gltf.scene, `已导入 ${file.name}`);
-  } catch (error) {
-    status.textContent = `导入失败：${error.message ?? error}`;
-  } finally {
-    URL.revokeObjectURL(url);
-    fileInput.value = '';
-  }
-});
-document.getElementById('demo-btn').addEventListener('click', () => replaceTarget(sampleScene(), '内置测试场景已恢复'));
-
-function pickOrigin(clientX, clientY) {
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(pointer, camera);
-  const intersections = raycaster.intersectObject(target, true);
-  if (intersections.length) setOrigin(intersections[0].point);
-}
-renderer.domElement.addEventListener('pointerdown', (event) => { if (event.shiftKey && event.button === 0 && target) pickOrigin(event.clientX, event.clientY); });
-
-for (const name of ['dragenter','dragover']) stage.addEventListener(name, (e) => { e.preventDefault(); });
-stage.addEventListener('drop', async (e) => {
-  e.preventDefault();
-  const file = [...e.dataTransfer.files].find((f) => f.name.toLowerCase().endsWith('.glb'));
-  if (!file) { status.textContent = '当前基座只支持拖入单个 GLB；关联资源 GLTF 后续支持。'; return; }
-  // Use the dropped file directly; do not mutate the file input's FileList.
-  const url = URL.createObjectURL(file);
-  try { const gltf = await loader.loadAsync(url); replaceTarget(gltf.scene, `已导入 ${file.name}`); }
-  catch (err) { status.textContent = `导入失败：${err.message ?? err}`; }
-  finally { URL.revokeObjectURL(url); fileInput.value = ''; }
-});
-
-function resize() {
-  const width = stage.clientWidth, height = stage.clientHeight;
-  renderer.setSize(width, height, false);
-  camera.aspect = width / Math.max(height, 1);
-  camera.updateProjectionMatrix();
-}
-new ResizeObserver(resize).observe(stage);
-replaceTarget(sampleScene(), '内置测试场景已加载');
-resize();
-function frame() { controls.update(); renderer.render(scene, camera); requestAnimationFrame(frame); }
-frame();
+$('export-run').onclick=exportRun;
+for(const id of ['scrub'])$(id).addEventListener('input',()=>{cameraEditing=false;});for(const id of ['start','prev','next'])$(id).addEventListener('click',()=>{cameraEditing=false;});
+$('current-time').oninput=$('current-time').onchange=e=>{cameraEditing=false;playing=false;state.time=T.MathUtils.clamp(Number(e.target.value)||0,0,state.duration);refreshTime();};
+let previous=performance.now(),frames=0,fpsStart=previous;function frame(now){const dt=Math.min((now-previous)/1000,.1);previous=now;if(playing&&!busy&&!exporting){state.time+=dt;if(state.time>state.duration){if(state.loop)state.time%=state.duration;else{state.time=state.duration;playing=false;$('play').textContent='▶';}}refreshTime();}if(!exporting&&!busy&&current)draw();frames++;if(now-fpsStart>1000){$('fps').textContent=Math.round(frames*1000/(now-fpsStart))+' FPS';frames=0;fpsStart=now;}requestAnimationFrame(frame);}renderInspector();renderTimeline();resize();requestAnimationFrame(frame);
+await switchScene('car');loadHDR('./assets/studio_small_08_1k.hdr');
+// Public diagnostic interface also supports deterministic integration/render tests.
+window.animus={state,runtime,engine,renderer,scene,camera,controls,ready:true,switchScene,applyPreset,draw,importFiles,projectData,openProject,capturePNG,setTime(t){state.time=t;playing=false;cameraEditing=false;refreshTime();draw();},audit(){return {...engine.audit(),time:state.time,preset:state.preset,scene:state.scene,hdrLoaded:!!studioEnv,shaderErrors:shaderErrors.length,camera:cameraData(),exporting};}};
+if(new URLSearchParams(location.search).has('qa')){const {runQA}=await import('./qa.js');runQA(window.animus).catch(e=>{console.error(e);toast('验收运行失败：'+e.message);});}
+import './previews.css';

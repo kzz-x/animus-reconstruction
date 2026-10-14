@@ -1,0 +1,10 @@
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const folder=path.join(path.dirname(fileURLToPath(import.meta.url)),'dist');
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.wasm':'application/wasm','.png':'image/png','.jpg':'image/jpeg','.hdr':'application/octet-stream','.json':'application/json','.svg':'image/svg+xml'};
+const port=Number(process.env.ANIMUS_PORT||8787);
+const server=http.createServer((req,res)=>{try{let pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);const target=path.resolve(folder,'.'+(pathname==='/'?'/index.html':pathname));if(!target.startsWith(folder+path.sep)&&target!==folder){res.writeHead(403).end();return;}if(!fs.existsSync(target)||!fs.statSync(target).isFile()){res.writeHead(404).end('Not found');return;}res.setHeader('Content-Type',mime[path.extname(target)]||'application/octet-stream');res.setHeader('X-Animus-Studio','1');res.setHeader('Cache-Control','no-cache');fs.createReadStream(target).pipe(res);}catch(e){res.writeHead(500).end('Unable to serve asset');}});
+server.listen(port,'127.0.0.1',()=>console.log(`Animus Studio: http://127.0.0.1:${port}/`));
+server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`端口 ${port} 已占用。已有工作台可直接访问 http://127.0.0.1:${port}/` : e.message);process.exit(1);});

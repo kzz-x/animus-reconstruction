@@ -1,0 +1,7 @@
+.preset-visual.rendered:before,.preset-visual.rendered:after{display:none}
+[data-scene] .scene-art{background-size:cover;background-position:center}
+[data-scene] .scene-art svg{display:none}
+[data-scene=car] .scene-art{background-image:url('/previews/car.jpg')}
+[data-scene=district] .scene-art{background-image:url('/previews/district.jpg')}
+[data-scene=courtyard] .scene-art{background-image:url('/previews/courtyard.jpg')}
+#current-time{width:61px!important;color:#a9c4b6;font-size:10px}

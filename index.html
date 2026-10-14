@@ -1,38 +1,12 @@
 <!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Animus Reconstruction｜数字世界重建器</title>
-  </head>
-  <body>
-    <div id="app">
-      <main class="viewport">
-        <div class="topbar"><span class="mark">AR</span><strong>Animus Reconstruction</strong><span class="version">可选预览示例</span></div>
-        <div id="stage" role="img" aria-label="三维场景预览"></div>
-        <div class="stage-hint">拖拽旋转 · 滚轮缩放 · Shift + 单击设置重建原点 · 拖入 GLB</div>
-      </main>
-      <aside class="sidebar">
-        <h2>数字世界重建器</h2>
-        <p class="desc">将三维场景从数字虚空逐步重建。这里展示的是可选场景预览示例，完整重建效果尚待开发。</p>
-        <section>
-          <h3>场景</h3>
-          <label class="upload" for="model-file">选择 GLB 文件</label>
-          <input id="model-file" type="file" accept=".glb,model/gltf-binary" />
-          <button id="demo-btn" type="button">恢复内置测试场景</button>
-          <p id="scene-status" class="status">内置测试场景已加载</p>
-        </section>
-        <section>
-          <h3>重建原点</h3>
-          <p id="origin-label" class="value">X 0.00 / Y 0.00 / Z 0.00</p>
-          <p class="desc">Shift + 单击模型或地面拾取原点；后续 P1 使用世界空间原点驱动波前。</p>
-        </section>
-        <section>
-          <h3>项目目标</h3>
-          <p class="desc">让不同完整三维场景从数字虚空中逐步构建为真实世界。详见 <code>docs/PRODUCT.md</code>。</p>
-        </section>
-      </aside>
-    </div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
-</html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Animus Studio — 可复用的三维世界重建创作工作台"><title>Animus Studio · 数字世界重建器</title></head>
+<body><div id="app">
+<header class="topbar"><div class="brand"><span class="brandmark">A</span><b>ANIMUS<span>STUDIO</span></b><small>RECONSTRUCTION / 01</small></div><div class="project-title">未命名重建镜头 <span id="dirty">●</span></div><div class="top-actions"><button id="undo" title="撤销 Ctrl+Z">↶</button><button id="redo" title="重做 Ctrl+Shift+Z">↷</button><span class="divider"></span><button id="save-project">保存工程</button><button id="open-project">打开</button><button id="export-open" class="primary">导出镜头 ↗</button></div></header>
+<aside class="assets panel"><div class="panel-heading"><b>场景与资产</b><span class="micro">ASSETS</span></div><button class="import-button" id="import">＋ 导入 GLB / GLTF 场景<span>支持关联贴图 · 本地处理</span></button><div class="section-label">示例场景 <span>02</span></div><button class="scene-card active" data-scene="car"><div class="scene-art car-art"><svg viewBox="0 0 200 70"><path d="M23 46 L33 29 Q43 26 65 25 L88 12 Q100 7 125 10 L148 26 L173 34 L182 46 L177 53 L24 53 Z"/><circle cx="55" cy="49" r="11"/><circle cx="149" cy="49" r="11"/><path d="M70 25 L91 14 L121 14 L139 25 Z"/></svg></div><span><b>汽车影棚</b><small>AUTOMOTIVE / PBR</small></span><i>01</i></button><button class="scene-card" data-scene="district"><div class="scene-art city-art"><svg viewBox="0 0 200 70"><path d="M15 62V26l25-12 30 12v36M83 62V11l25-9 34 13v47M154 62V34l18-8 22 12v24"/><path d="M15 33l25-11 30 12M15 43l25-11 30 12M15 53l25-11 30 12M84 23l24-9 34 13M84 35l24-9 34 13M84 47l24-9 34 13"/></svg></div><span><b>建筑街区</b><small>DISTRICT / ARCHITECTURE</small></span><i>02</i></button><div class="section-label">场景层级 <span id="object-count">—</span></div><div class="tree-actions"><button id="group-selected">分组</button><button id="origin-selected">设为起点</button></div><div id="scene-tree" class="scene-tree"></div><div class="asset-footer"><span class="status-dot"></span><span id="asset-status">正在准备场景…</span></div></aside>
+<main class="workspace"><div class="viewport-toolbar"><div><span class="status-dot"></span><b>实时视口</b><span class="micro" id="scene-label">AUTOMOTIVE STAGE</span></div><div><button id="compare">原始场景 A/B</button><button id="fit">自动构图</button><button id="focus-pick">拾取焦点</button><button id="fullscreen" title="沉浸视口">⤢</button></div></div><div class="stage-wrap"><div id="stage"></div><div class="shot-top"><span id="preset-badge">01 / ANIMUS MEMORY</span><span id="quality-badge">PBR · 线性光照</span></div><div class="shot-bottom"><div><div class="shot-kicker">DIGITAL WORLD / RECONSTRUCTION</div><b id="shot-name">记忆从这里开始。</b><span id="shot-subtitle">世界坐标传播 · 实体碎片 · 原始材质</span></div><div class="shot-stats"><b id="progress-label">42<span>%</span></b><small>RECONSTRUCTED</small></div></div><div class="viewport-help">拖动旋转 · 滚轮推进 · Shift + 点击设置起点 · 点击选择物体</div><div class="loading" id="loading"><div class="spinner"></div><b>正在建立记忆空间</b><span>准备几何、反射与表面采样</span></div></div><div class="viewport-status"><span id="render-stats">WEBGL 2 / PBR</span><span id="origin-readout">ORIGIN 0.00 / 0.00 / 0.00</span><span id="fps">— FPS</span></div></main>
+<aside class="inspector panel"><div class="panel-heading"><b>镜头设计</b><button id="save-preset">＋ 保存预设</button></div><nav class="inspector-tabs" id="inspector-tabs"><button data-panel="presets" class="active">预设</button><button data-panel="reconstruction">重建</button><button data-panel="fragments">碎片</button><button data-panel="lighting">光影</button><button data-panel="camera">摄影</button></nav><div id="inspector-content" class="inspector-content"></div><div class="inspector-footer"><button id="reset">重置当前设计</button><span>可复现 / <b id="seed-label">42</b></span></div></aside>
+<footer class="timeline"><div class="transport"><div class="transport-left"><span class="micro">TIMELINE</span><button id="start" title="回到第一帧">|◀</button><button id="prev" title="上一帧">‹</button><button id="play" class="play" title="播放 / 暂停 空格">▶</button><button id="next" title="下一帧">›</button><button id="loop" class="active">循环</button><b id="timecode">00:04:06</b></div><div class="transport-right"><label>时长 <input id="duration" type="number" min="1" max="60" step=".5" value="10"> s</label><select id="fps-select" aria-label="帧率"><option>24</option><option selected>30</option><option>60</option></select><button id="add-camera-key">＋ 摄影机关键帧</button><button id="add-param-key">＋ 参数关键帧</button></div></div><div class="timeline-body"><div class="track-labels"><span>重建传播</span><span>碎片漂移</span><span>材质阶段</span><span>摄影机</span></div><div class="track-area"><div id="ruler" class="ruler"></div><div id="tracks"></div><div id="playhead"><span></span></div><input id="scrub" type="range" min="0" max="10" step=".033333" value="4.2" aria-label="时间轴进度"></div></div></footer>
+</div><div id="toast" role="status"></div><input id="model-files" type="file" accept=".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp,.ktx2" multiple hidden><input id="project-file" type="file" accept=".animus,.json" hidden><input id="hdr-file" type="file" accept=".hdr" hidden>
+<dialog id="export-dialog"><form method="dialog"><div class="modal-title"><div><span class="micro">RENDER & EXPORT</span><h2>输出你的重建镜头</h2></div><button class="close">×</button></div><p>PNG 序列逐帧渲染，可用于 After Effects / Resolve。视频使用浏览器实时录制。</p><div class="export-grid"><label>输出格式<select id="export-format"><option value="png">PNG 序列 / ZIP</option><option value="still">当前帧 / PNG</option><option value="webm">WebM 视频 / 实时</option></select></label><label>分辨率<select id="export-size"><option value="1280">1280 · HD</option><option value="1920" selected>1920 · Full HD</option><option value="3840">3840 · UHD 4K</option></select></label><label>开始时间 / s<input id="export-start" type="number" min="0" value="0" step=".1"></label><label>结束时间 / s<input id="export-end" type="number" min="0" value="10" step=".1"></label></div><label class="check"><input id="export-alpha" type="checkbox">透明背景（PNG，隐藏影棚地面可获得主体抠像）</label><div class="export-progress"><div id="export-bar"></div></div><div class="export-bottom"><span id="export-status">画幅 16:9 · 30 FPS</span><button type="button" id="export-cancel" hidden>取消</button><button type="button" id="export-run" class="primary">开始导出 ↗</button></div></form></dialog>
+<dialog id="key-dialog"><form method="dialog"><div class="modal-title"><h2>参数关键帧</h2><button class="close">×</button></div><p>在当前时间写入数值，关键帧之间使用平滑插值。</p><label>参数<select id="key-param"><option value="drift">碎片漂移</option><option value="width">波前宽度</option><option value="white">白模权重</option><option value="exposure">曝光</option><option value="keyIntensity">主光强度</option><option value="focus">焦点距离</option><option value="bloom">Bloom</option></select></label><label>数值<input id="key-value" type="number" step=".01" value="1.8"></label><button type="button" id="key-save" class="primary">写入关键帧</button><button type="button" id="key-clear">清除此参数的关键帧</button></form></dialog>
+<script type="module" src="/src/main.js"></script></body></html>

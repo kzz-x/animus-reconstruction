@@ -1,0 +1,1049 @@
+{
+  "date": "2026-10-14T05:13:44.387Z",
+  "checks": [
+    {
+      "name": "汽车真实 PBR 资产",
+      "pass": true,
+      "details": {
+        "meshes": 110,
+        "fragments": 7000,
+        "range": 2.959696627742649,
+        "materialRestored": true,
+        "excluded": 1,
+        "seed": 42,
+        "bounds": [
+          2.716158700804741,
+          1.307954089198598,
+          4.357385993003845
+        ],
+        "time": 10,
+        "preset": "memory",
+        "scene": "car",
+        "hdrLoaded": true,
+        "shaderErrors": 0,
+        "camera": {
+          "position": [
+            5.400000000000001,
+            2.4,
+            6.7
+          ],
+          "target": [
+            0,
+            0.65,
+            0
+          ],
+          "fov": 38
+        },
+        "exporting": false
+      }
+    },
+    {
+      "name": "重建完成恢复原材质对象",
+      "pass": true,
+      "details": {
+        "meshes": 110,
+        "fragments": 7000,
+        "range": 2.959696627742649,
+        "materialRestored": true,
+        "excluded": 1,
+        "seed": 42,
+        "bounds": [
+          2.716158700804741,
+          1.307954089198598,
+          4.357385993003845
+        ],
+        "time": 10,
+        "preset": "memory",
+        "scene": "car",
+        "hdrLoaded": true,
+        "shaderErrors": 0,
+        "camera": {
+          "position": [
+            5.400000000000001,
+            2.4,
+            6.7
+          ],
+          "target": [
+            0,
+            0.65,
+            0
+          ],
+          "fov": 38
+        },
+        "exporting": false
+      }
+    },
+    {
+      "name": "精确时间输入立即响应",
+      "pass": true
+    },
+    {
+      "name": "对象分组保留世界变换",
+      "pass": true
+    },
+    {
+      "name": "起点为空且碎片无可见体积",
+      "pass": true,
+      "details": {
+        "meshes": 110,
+        "fragments": 7000,
+        "range": 2.959696627850819,
+        "materialRestored": false,
+        "excluded": 1,
+        "seed": 42,
+        "bounds": [
+          2.7161587009589736,
+          1.3079540891965244,
+          4.357385993003845
+        ],
+        "time": 0,
+        "preset": "memory",
+        "scene": "car",
+        "hdrLoaded": true,
+        "shaderErrors": 0,
+        "camera": {
+          "position": [
+            5.400000000000001,
+            2.4,
+            6.7
+          ],
+          "target": [
+            0,
+            0.65,
+            0
+          ],
+          "fov": 38
+        },
+        "exporting": false
+      }
+    },
+    {
+      "name": "主光方向改变真实渲染帧",
+      "pass": true
+    },
+    {
+      "name": "环境反射强度改变真实渲染帧",
+      "pass": true
+    },
+    {
+      "name": "曝光改变真实渲染帧",
+      "pass": true
+    },
+    {
+      "name": "镜头视角改变真实渲染帧",
+      "pass": true
+    },
+    {
+      "name": "景深强度改变真实渲染帧",
+      "pass": true
+    },
+    {
+      "name": "随机种子可复现",
+      "pass": true,
+      "details": {
+        "seed": 42
+      }
+    },
+    {
+      "name": "改变种子改变采样",
+      "pass": true
+    },
+    {
+      "name": "厚度控件改变 GPU 参数",
+      "pass": true
+    },
+    {
+      "name": "漂移控件改变 GPU 参数",
+      "pass": true
+    },
+    {
+      "name": "密度控件重新创建实体碎片",
+      "pass": true
+    },
+    {
+      "name": "空间传播模式 radial",
+      "pass": true
+    },
+    {
+      "name": "空间传播模式 sphere",
+      "pass": true
+    },
+    {
+      "name": "空间传播模式 direction",
+      "pass": true
+    },
+    {
+      "name": "参数关键帧真实插值",
+      "pass": true
+    },
+    {
+      "name": "速度真实重定时",
+      "pass": true
+    },
+    {
+      "name": "低速结束无强制补全跳变",
+      "pass": true
+    },
+    {
+      "name": "有限范围末帧保留局部范围",
+      "pass": true
+    },
+    {
+      "name": "预设 记忆重建",
+      "pass": true,
+      "details": {
+        "material": "ceramic",
+        "mode": "radial",
+        "background": "#e8edef"
+      }
+    },
+    {
+      "name": "预设 电影拼装",
+      "pass": true,
+      "details": {
+        "material": "metal",
+        "mode": "direction",
+        "background": "#101619"
+      }
+    },
+    {
+      "name": "预设 工业蓝图",
+      "pass": true,
+      "details": {
+        "material": "ceramic",
+        "mode": "sphere",
+        "background": "#16313b"
+      }
+    },
+    {
+      "name": "预设 多边形翻转",
+      "pass": true,
+      "details": {
+        "material": "ceramic",
+        "mode": "direction",
+        "background": "#e8e0d4"
+      }
+    },
+    {
+      "name": "预设 玻璃数据",
+      "pass": true,
+      "details": {
+        "material": "glass",
+        "mode": "sphere",
+        "background": "#253b43"
+      }
+    },
+    {
+      "name": "预设 信号重组",
+      "pass": true,
+      "details": {
+        "material": "iridescent",
+        "mode": "direction",
+        "background": "#e3e5ee"
+      }
+    },
+    {
+      "name": "预设 材质同步",
+      "pass": true,
+      "details": {
+        "material": "original",
+        "mode": "direction",
+        "background": "#e7e9e3"
+      }
+    },
+    {
+      "name": "预设 逆向崩解",
+      "pass": true,
+      "details": {
+        "material": "metal",
+        "mode": "radial",
+        "background": "#dfe5e8"
+      }
+    },
+    {
+      "name": "玻璃折射率改变真实渲染帧",
+      "pass": true
+    },
+    {
+      "name": "排除对象保持原始材质",
+      "pass": true
+    },
+    {
+      "name": "完整工程往返保留几何层级",
+      "pass": true,
+      "details": {
+        "before": {
+          "meshes": 110,
+          "bounds": [
+            2.7161587009589736,
+            1.3079540891965244,
+            4.357385993003845
+          ],
+          "keys": "[]"
+        },
+        "after": {
+          "meshes": 110,
+          "fragments": 3500,
+          "range": 3.2736752776882185,
+          "materialRestored": false,
+          "excluded": 1,
+          "seed": 42,
+          "bounds": [
+            2.716158700957256,
+            1.3079540891964738,
+            4.357385993003845
+          ],
+          "time": 0,
+          "preset": "glass",
+          "scene": "car",
+          "hdrLoaded": true,
+          "shaderErrors": 0,
+          "camera": {
+            "position": [
+              5.400000000000001,
+              2.4,
+              6.7
+            ],
+            "target": [
+              0,
+              0.65,
+              0
+            ],
+            "fov": 38
+          },
+          "exporting": false
+        }
+      }
+    },
+    {
+      "name": "工程恢复后原材质仍可还原",
+      "pass": true
+    },
+    {
+      "name": "GLTF 关联 BIN 导入",
+      "pass": true,
+      "details": {
+        "meshes": 1,
+        "fragments": 3500,
+        "range": 2.83606797749979,
+        "materialRestored": true,
+        "excluded": 0,
+        "seed": 42,
+        "bounds": [
+          2,
+          2,
+          0
+        ],
+        "time": 10,
+        "preset": "glass",
+        "scene": "import",
+        "hdrLoaded": true,
+        "shaderErrors": 0,
+        "camera": {
+          "position": [
+            2.036467529817257,
+            2.2218805178903542,
+            2.5455844122715714
+          ],
+          "target": [
+            0,
+            1,
+            0
+          ],
+          "fov": 38
+        },
+        "exporting": false
+      }
+    },
+    {
+      "name": "导入材质保真",
+      "pass": true
+    },
+    {
+      "name": "第二场景复用同一引擎",
+      "pass": true,
+      "details": {
+        "meshes": 38,
+        "fragments": 7000,
+        "range": 30.990129054250815,
+        "materialRestored": true,
+        "excluded": 0,
+        "seed": 42,
+        "bounds": [
+          38,
+          12.325000002980232,
+          38.67654228210449
+        ],
+        "time": 10,
+        "preset": "memory",
+        "scene": "district",
+        "hdrLoaded": true,
+        "shaderErrors": 0,
+        "camera": {
+          "position": [
+            23,
+            17,
+            28.99999999999999
+          ],
+          "target": [
+            0,
+            2,
+            -2
+          ],
+          "fov": 38
+        },
+        "exporting": false
+      }
+    },
+    {
+      "name": "实例网格按各实例真实表面采样",
+      "pass": true,
+      "details": {
+        "min": -3.5000000000000004,
+        "max": 3.500000000000001
+      }
+    },
+    {
+      "name": "实例网格完成端点保真",
+      "pass": true
+    },
+    {
+      "name": "重新采样没有叠加旧碎片",
+      "pass": true,
+      "details": {
+        "geometriesBefore": 52,
+        "after": 58
+      }
+    },
+    {
+      "name": "古典庭院同一传播场",
+      "pass": true,
+      "details": {
+        "meshes": 10,
+        "fragments": 7000,
+        "range": 21.365050352898713,
+        "materialRestored": true,
+        "excluded": 0,
+        "seed": 42,
+        "bounds": [
+          26.979999542236328,
+          12.269999615848064,
+          22.979999542236328
+        ],
+        "time": 10,
+        "preset": "memory",
+        "scene": "courtyard",
+        "hdrLoaded": true,
+        "shaderErrors": 0,
+        "camera": {
+          "position": [
+            18,
+            12.000000000000004,
+            24
+          ],
+          "target": [
+            0,
+            4,
+            0
+          ],
+          "fov": 38
+        },
+        "exporting": false
+      }
+    },
+    {
+      "name": "所有材质与阴影 Shader 编译无错误",
+      "pass": true
+    },
+    {
+      "name": "真实 HDRI 已加载",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "captures": [
+    {
+      "name": "car_final",
+      "bytes": 720800,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 2.959696627742649,
+      "materialRestored": true,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.716158700804741,
+        1.307954089198598,
+        4.357385993003845
+      ],
+      "time": 10,
+      "preset": "memory",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "car_void",
+      "bytes": 148522,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 2.959696627850819,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 0,
+      "preset": "memory",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "car_memory",
+      "bytes": 686043,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 2.959696627850819,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 4.2,
+      "preset": "memory",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "preset_memory",
+      "bytes": 755541,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 2.959696627850819,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 5,
+      "preset": "memory",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "preset_assembly",
+      "bytes": 1204375,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 3.108544927717931,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 5,
+      "preset": "assembly",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "preset_blueprint",
+      "bytes": 878712,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 3.2736752776884503,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 5,
+      "preset": "blueprint",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "preset_voxel",
+      "bytes": 504949,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 3.108544927717931,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 5,
+      "preset": "voxel",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "preset_glass",
+      "bytes": 1086410,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 3.2736752776884503,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 5,
+      "preset": "glass",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "preset_signal",
+      "bytes": 970359,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 3.108544927717931,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 5,
+      "preset": "signal",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "preset_sync",
+      "bytes": 636470,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 3.108544927717931,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 5,
+      "preset": "sync",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "preset_reverse",
+      "bytes": 945543,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 2.959696627850819,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 5,
+      "preset": "reverse",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "car_assembly",
+      "bytes": 1019552,
+      "meshes": 110,
+      "fragments": 7000,
+      "range": 3.108544927717931,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 6.5,
+      "preset": "assembly",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "car_glass",
+      "bytes": 1051864,
+      "meshes": 110,
+      "fragments": 3500,
+      "range": 3.2736752776884503,
+      "materialRestored": false,
+      "excluded": 1,
+      "seed": 42,
+      "bounds": [
+        2.7161587009589736,
+        1.3079540891965244,
+        4.357385993003845
+      ],
+      "time": 5,
+      "preset": "glass",
+      "scene": "car",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          5.400000000000001,
+          2.4,
+          6.7
+        ],
+        "target": [
+          0,
+          0.65,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "district_memory",
+      "bytes": 753472,
+      "meshes": 38,
+      "fragments": 7000,
+      "range": 30.990129054250815,
+      "materialRestored": false,
+      "excluded": 0,
+      "seed": 42,
+      "bounds": [
+        38,
+        12.325000002980232,
+        38.67654228210449
+      ],
+      "time": 4.8,
+      "preset": "memory",
+      "scene": "district",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          23,
+          17,
+          28.99999999999999
+        ],
+        "target": [
+          0,
+          2,
+          -2
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "district_final",
+      "bytes": 365133,
+      "meshes": 38,
+      "fragments": 7000,
+      "range": 30.990129054250815,
+      "materialRestored": true,
+      "excluded": 0,
+      "seed": 42,
+      "bounds": [
+        38,
+        12.325000002980232,
+        38.67654228210449
+      ],
+      "time": 10,
+      "preset": "memory",
+      "scene": "district",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          23,
+          17,
+          28.99999999999999
+        ],
+        "target": [
+          0,
+          2,
+          -2
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "courtyard_memory",
+      "bytes": 671329,
+      "meshes": 10,
+      "fragments": 7000,
+      "range": 21.365050352898713,
+      "materialRestored": false,
+      "excluded": 0,
+      "seed": 42,
+      "bounds": [
+        26.979999542236328,
+        12.269999615848064,
+        22.979999542236328
+      ],
+      "time": 5,
+      "preset": "memory",
+      "scene": "courtyard",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          18,
+          12.000000000000004,
+          24
+        ],
+        "target": [
+          0,
+          4,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    },
+    {
+      "name": "courtyard_final",
+      "bytes": 482433,
+      "meshes": 10,
+      "fragments": 7000,
+      "range": 21.365050352898713,
+      "materialRestored": true,
+      "excluded": 0,
+      "seed": 42,
+      "bounds": [
+        26.979999542236328,
+        12.269999615848064,
+        22.979999542236328
+      ],
+      "time": 10,
+      "preset": "memory",
+      "scene": "courtyard",
+      "hdrLoaded": true,
+      "shaderErrors": 0,
+      "camera": {
+        "position": [
+          18,
+          12.000000000000004,
+          24
+        ],
+        "target": [
+          0,
+          4,
+          0
+        ],
+        "fov": 38
+      },
+      "exporting": false
+    }
+  ],
+  "summary": {
+    "passed": 43,
+    "total": 43,
+    "failures": []
+  }
+}
